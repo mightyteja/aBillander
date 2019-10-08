@@ -1012,9 +1012,8 @@ class Product extends Model
                 $query->orWhere('category_id', $product->category_id);
             }
         })
-                                ->where('from_quantity', '>', 1) // Quantity range
-
-                        ->where(function ($query) {  // Date range
+        ->where('from_quantity', '>', 1) // Quantity range
+        ->where(function ($query) {  // Date range
                 $now = Carbon::now()->startOfDay();
                 $query->where(function ($query) use ($now) {
                     $query->where('date_from', null);
@@ -1025,13 +1024,18 @@ class Product extends Model
                     $query->orWhere('date_to', '>=', $now);
                 });
             })
-                        ->orderBy('from_quantity', 'ASC')
-                        ->get();
+            ->orderBy('from_quantity', 'ASC')
+            ->get();
     }
 
     public function hasQuantityPriceRules(Customer $customer = null)
     {
         return $this->getQuantityPriceRules($customer)->count();
+    }
+
+    public function hasExtraItemsPriceRules(Customer $customer = null)
+    {
+        return $this->getQuantityPriceRules($customer)->contains('rule_type', 'promo');
     }
 
     /**

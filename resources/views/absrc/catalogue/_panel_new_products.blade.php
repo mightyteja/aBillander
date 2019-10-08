@@ -270,8 +270,6 @@ https://stackoverflow.com/questions/20842578/how-to-combine-a-bootstrap-btn-grou
 
           success: function(result){
 
-              // loadCartlines();
-
               $(function () {  $('[data-toggle="tooltip"]').tooltip()});
 
               $('#badge_cart_nbr_items').html(result.cart_nbr_items);

@@ -19,7 +19,7 @@ class PriceRule extends Model
                            'customer_id', 'customer_group_id',
                            'currency_id', 'rule_type', 'discount_type',
                            'price', 'discount_percent', 'discount_amount', 'discount_amount_is_tax_incl',
-                           'from_quantity',
+                           'extra_items', 'from_quantity',
                            'date_from', 'date_to',
     ];
 
@@ -30,6 +30,7 @@ class PriceRule extends Model
         'customer_id'       => 'nullable|exists:customers,id',
         'customer_group_id' => 'nullable|exists:customer_groups,id',
         'currency_id'       => 'nullable|exists:currencies,id',
+        'extra_item'        => 'nullable',
         'date_from'         => 'nullable|date',
         'date_to'           => 'nullable|date',
     ];

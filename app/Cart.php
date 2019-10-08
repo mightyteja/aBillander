@@ -191,6 +191,23 @@ class Cart extends Model
         return $cart->add($product, $unit_customer_price, $quantity);
     }
 
+    public function addExtraItemLine($product_id = null, $combination_id = null, $quantity = 1.0)
+    {
+        if ($combination_id > 0) {
+            $combination = Combination::with('product')->find(intval($combination_id));
+            $product = $combination->product;
+            $product->reference = $combination->reference;
+            $product->name = $product->name . ' | ' . $combination->name;
+        } else {
+            $product = Product::find(intval($product_id));
+        }
+
+        // Is there a Price for this Customer?
+        if (!$product) {
+            return false;
+        }
+        return $this->add($product, 0, $quantity);
+    }
 
     public function addLineByAdmin($product_id = null, $combination_id = null, $quantity = 1.0)
     {
@@ -235,7 +252,7 @@ class Cart extends Model
 
     public function add($product = null, $price = null, $quantity = 1.0)
     {
-        // If $product is a 'prodduct_id', instantiate product, please.
+        // If $product is a 'product_id', instantiate product, please.
         if (is_numeric($product)) {
             $product = Product::find($product);
         }
@@ -244,14 +261,13 @@ class Cart extends Model
             return null;
         }
 
-        if ($price === null) // Price can be 0.0!!!
-        {
+        if ($price === null) { // Price can be 0.0!!!
             $price = $product->price;
         }
 
         // Already in Cart?
         $line = $this->cartlines()->where('product_id', $product->id)->first();
-        if ($line) {
+        if ($line && $price > 0) {
             // Keep line price
 
             // Quantity

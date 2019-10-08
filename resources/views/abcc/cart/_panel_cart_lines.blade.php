@@ -140,7 +140,7 @@
 
                         <td class="text-right">
 
-                            @if ( $line->product->has_price_rule_applied )
+                            @if ($line->product->has_price_rule_applied || $line->product->has_extra_item_applied)
                                 <a class="btn btn-sm btn-custom show-pricerules pull-right" href="#" data-target='#myModalShowPriceRules'
                                    data-id="{{ $line->product->id }}" data-toggle="modal" onClick="return false;"
                                    title="{{ l('Show Special Prices', 'abcc/catalogue') }}">
@@ -150,12 +150,20 @@
 
                             <div class="pull-right">
                                 {{ $line->as_price('unit_customer_price') }}{{ $cart->currency->sign }}
-                                @if ( $line->product->has_price_rule_applied )
+                                @if ($line->product->has_price_rule_applied)
                                     <p class="text-info crossed">
                                         {{ $line->as_priceable($line->product->previous_price) }}{{ $cart->currency->sign }}
                                     </p>
                                 @endif
                             </div>
+
+                            @if ($line->product->has_extra_item_applied)
+                                <div class="pull-left">
+                                    <p class="text-info">
+                                        +{{ $line->product->extra_item_qty }}{{ l(' extra') }}
+                                    </p>
+                                </div>
+                            @endif
                         </td>
 
                         @if($config['display_with_taxes'])
@@ -182,6 +190,16 @@
 
                         </td>
                     </tr>
+
+                    @if ($line->product->has_extra_item_applied)
+                    <tr>
+                        <td colspan="3"></td>
+                        <td colspan="5">
+                            {{ l(' Promo: Pays ') }}{{ (int)$line->quantity }}
+                            {{ l(' and gets ') }}  {{ (int)$line->quantity+$line->product->extra_item_qty }}
+                        </td>
+                    </tr>
+                    @endif
                 @endforeach
 
                 @include('abcc.cart._panel_cart_total')

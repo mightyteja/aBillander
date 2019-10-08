@@ -1,33 +1,32 @@
 @section('modals')
+    @parent
 
-@parent
+    <div class="modal fade" id="modalCartlineDelete" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                    <h4 class="modal-title" id="modalCartlineDeleteLabel"></h4>
+                </div>
+                <div class="modal-body"></div>
+                <div class="modal-footer">
+                    <input type="hidden" id="delete_line_id">
 
-<div class="modal fade" id="modalCartlineDelete" tabindex="-1" role="dialog" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-                <h4 class="modal-title" id="modalCartlineDeleteLabel"></h4>
-            </div>
-            <div class="modal-body"></div>
-            <div class="modal-footer">
-                <input type="hidden" id="delete_line_id">
-
-                <button type="button" class="btn btn-link" data-dismiss="modal">{{l('Cancel', [], 'layouts')}}</button>
-                <button type="submit" class="btn btn-danger" name="btn-update" id="modalCartlineDeleteSubmit" xonclick="this.disabled=true;">
-                    <i class="fa fa-thumbs-up"></i>
-                    &nbsp; {{l('Confirm', [], 'layouts')}}</button>
+                    <button type="button" class="btn btn-link" data-dismiss="modal">{{l('Cancel', [], 'layouts')}}</button>
+                    <button type="submit" class="btn btn-danger" name="btn-update" id="modalCartlineDeleteSubmit" xonclick="this.disabled=true;">
+                        <i class="fa fa-thumbs-up"></i>
+                        &nbsp; {{l('Confirm', [], 'layouts')}}</button>
+                </div>
             </div>
         </div>
     </div>
-</div>
 
 @endsection
-@section('scripts') @parent 
+@section('scripts') @parent
 
 <script type="text/javascript">
     $(document).ready(function () {
-        $('body').on('click', '.delete-cart-line', function(evnt) { 
+        $('body').on('click', '.delete-cart-line', function (evnt) {
             var id = $(this).attr('data-id');
             var message = $(this).attr('data-content');
             var title = $(this).attr('data-title');
@@ -40,37 +39,39 @@
         });
     });
 
-        $("#modalCartlineDeleteSubmit").click(function() {
+    $("#modalCartlineDeleteSubmit").click(function () {
 
- //         alert('etgwer');
+        var id = $('#delete_line_id').val();
+        var url = "{{ route('cart.deleteline', ['']) }}/" + id;
+        var token = "{{ csrf_token() }}";
 
-            var id = $('#delete_line_id').val();
-            var url = "{{ route('cart.deleteline', ['']) }}/"+id;
-            var token = "{{ csrf_token() }}";
+        var payload = {};
 
-            var payload = {
-                          };
+        const panel = $('#panel_cart_lines');
+        panel.find('*').not('#loading_text').remove();
+        panel.addClass('loading');
+        $('#loading_text').show();
 
-            $.ajax({
-                url : url,
-                headers : {'X-CSRF-TOKEN' : token},
-                type : 'POST',
-                dataType : 'json',
-                data : payload,
+        $.ajax({
+            url: url,
+            headers: {'X-CSRF-TOKEN': token},
+            type: 'POST',
+            dataType: 'json',
+            data: payload,
 
-                success: function(result){
-                    
-                    loadCartlines();
+            success: function (result) {
+                panel.removeClass('loading');
+                loadCartLines();
 
-                    $('#modalCartlineDelete').modal('toggle');
-                    
-                    showAlertDivWithDelay("#msg-success-delete");
-    
-                    console.log(result);
-                }
-            });
+                $('#modalCartlineDelete').modal('toggle');
 
+                showAlertDivWithDelay("#msg-success-delete");
+
+                console.log(result);
+            }
         });
+
+    });
 
 </script>
 

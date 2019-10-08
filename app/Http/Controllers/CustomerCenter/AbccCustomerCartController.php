@@ -349,9 +349,18 @@ class AbccCustomerCartController extends Controller
             $line->price_with_taxes = $line->tax + $line->price_without_taxes;
 
             if ($line->product->hasQuantityPriceRulesApplicable($line->quantity, $customer)) {
-                $line->product->has_price_rule_applied = true;
-                $line->product->previous_price = $line->product->getPrice()->price;
+
+                 $rule = $line->product->getQuantityPriceRules($customer)->first();
+
+                if ($rule->rule_type === 'promo') {
+                    $line->product->has_extra_item_applied = true;
+                    $line->product->extra_item_qty = $rule->extra_items;
+                } else {
+                    $line->product->has_price_rule_applied = true;
+                    $line->product->previous_price = $line->product->getPrice()->price;
+                }
             }
+
             $taxes += $line->tax;
         });
         $cart->total_taxes = $cart->as_priceable($taxes);

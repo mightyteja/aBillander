@@ -93,4 +93,5 @@ footer {
 
 #div_cart_lines .show-pricerules {margin-left:1em}
 #div_cart_lines td {vertical-align: middle}
+#div_cart_lines .progress {margin-bottom:0}
 .crossed {text-decoration: line-through;}

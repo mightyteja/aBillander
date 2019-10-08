@@ -1,4 +1,4 @@
-<?php 
+<?php
 
 namespace App\Http\Controllers\CustomerCenter;
 
@@ -47,7 +47,7 @@ class AbccCustomerOrdersController extends Controller {
         $customer      = Auth::user()->customer;
 
 		$customer_orders = $this->customerOrder
-                            ->ofLoggedCustomer()      // Of Logged in Customer (see scope on Billable 
+                            ->ofLoggedCustomer()      // Of Logged in Customer (see scope on Billable
 //                            ->where('customer_id', $customer->id)
                             ->withCount('lines')
 //                            ->with('customer')
@@ -104,13 +104,26 @@ class AbccCustomerOrdersController extends Controller {
 	        	return redirect()->back()
 	                ->with('error', l('Document amount should be more than: ', 'layouts').abi_money( Auth::user()->canMinOrderValue(), $cart->currency ));
         }
-		
+
 
 		// Check
 		$rules = CustomerOrder::$rules;
 		$cartrules['shipping_address_id'] = str_replace('{customer_id}', $customer->id, $rules['shipping_address_id']);
 
         $this->validate($request, $cartrules);
+
+
+        $cart->cartlines->map(function ($line) use ($customer, &$cart) {
+            if ($line->product->hasQuantityPriceRulesApplicable($line->quantity, $customer)) {
+
+                $rule = $line->product->getQuantityPriceRules($customer)->first();
+
+                if ($rule->rule_type === 'promo') {
+                    $cart->add($line->product, 0, $rule->extra_items);
+                    $cart->load('cartlines');
+                }
+            }
+        });
 
 		// Let's rock!
 
@@ -124,7 +137,7 @@ class AbccCustomerOrdersController extends Controller {
 //			'document_id' => $order[''],
 //			'document_reference' => $order[''],
 //			'reference' => WooOrder::getOrderReference( $order ),
-			'reference_customer' => $request->input('reference'), 
+			'reference_customer' => $request->input('reference'),
 //			'reference_external' => $order['id'],
 
 			'created_via' => 'abcc',
@@ -160,10 +173,10 @@ class AbccCustomerOrdersController extends Controller {
 //			'total_shipping_tax_excl' => $order[''],
 //			'total_other_tax_incl' => $order[''],
 //			'total_other_tax_excl' => $order[''],
-			
+
 //			'total_lines_tax_incl' => $order['total'],
 //			'total_lines_tax_excl' => $order['total'] - $order['total_tax'],
-			
+
 //			'total_tax_incl' => $order['total'],
 //			'total_tax_excl' => $order['total'] - $order['total_tax'],
 
@@ -192,20 +205,18 @@ class AbccCustomerOrdersController extends Controller {
         $customerOrder = $this->customerOrder->create($data);
 
 		// Good boy:
-		if ( Configuration::isFalse('ABCC_ORDERS_NEED_VALIDATION') ) 
+		if ( Configuration::isFalse('ABCC_ORDERS_NEED_VALIDATION') )
 		{
 			$customerOrder->confirm();
 		}
-		
+
 
         // Lines stuff here in
 
         foreach ($cart->cartlines as $cartline) {
-        	# code...
-        	//abi_r($line->quantity);
         	$line = $customerOrder->addProductLine( $cartline->product_id, $cartline->combination_id, $cartline->quantity, ['prices_entered_with_tax' => 0, 'unit_customer_final_price' => $cartline->unit_customer_price] );
         }
-		
+
         // At last: empty cart ( delete lines & initialize )
         $cart->delete();
 
@@ -214,11 +225,11 @@ class AbccCustomerOrdersController extends Controller {
         // 
         // Create Todo
         $data = [
-            'name' => l('Preparar un Pedido a un Cliente'), 
-            'description' => l('Un Cliente ha realizado un Pedido desde el Centro de Clientes.'), 
-            'url' => route('customerorders.edit', [$customerOrder->id]), 
-            'due_date' => null, 
-            'completed' => 0, 
+            'name' => l('Preparar un Pedido a un Cliente'),
+            'description' => l('Un Cliente ha realizado un Pedido desde el Centro de Clientes.'),
+            'url' => route('customerorders.edit', [$customerOrder->id]),
+            'due_date' => null,
+            'completed' => 0,
             'user_id' => \App\Context::getContext()->user->id,
         ];
 
@@ -244,7 +255,7 @@ class AbccCustomerOrdersController extends Controller {
 				'subject'  => l(' :_> New Customer Order #:num', ['num' => $template_vars['document_num']]),
 				);
 
-			
+
 
 			$send = Mail::send('emails.'.\App\Context::getContext()->language->iso_code.'.abcc.new_customer_order', $template_vars, function($message) use ($data)
 			{
@@ -252,7 +263,7 @@ class AbccCustomerOrdersController extends Controller {
 
 				$message->to( $data['to'], $data['toName'] )->bcc( $data['from'] )->subject( $data['subject'] );	// Will send blind copy to sender!
 
-			});	
+			});
 
         } catch(\Exception $e) {
 
@@ -290,7 +301,7 @@ class AbccCustomerOrdersController extends Controller {
                 ->with('error', l('Document has no Lines', 'layouts'));
 
 		$reference_customer = $request->input('process_as', 'order') == 'quotation' ? 'QUOTATION' : '';
-		
+
 
 		// Check
 		$rules = CustomerOrder::$rules;
@@ -310,7 +321,7 @@ class AbccCustomerOrdersController extends Controller {
 //			'document_id' => $order[''],
 //			'document_reference' => $order[''],
 //			'reference' => WooOrder::getOrderReference( $order ),
-			'reference_customer' => '', 
+			'reference_customer' => '',
 //			'reference_external' => $order['id'],
 
 			'created_via' => 'abcc',
@@ -346,10 +357,10 @@ class AbccCustomerOrdersController extends Controller {
 //			'total_shipping_tax_excl' => $order[''],
 //			'total_other_tax_incl' => $order[''],
 //			'total_other_tax_excl' => $order[''],
-			
+
 //			'total_lines_tax_incl' => $order['total'],
 //			'total_lines_tax_excl' => $order['total'] - $order['total_tax'],
-			
+
 //			'total_tax_incl' => $order['total'],
 //			'total_tax_excl' => $order['total'] - $order['total_tax'],
 
@@ -376,7 +387,7 @@ class AbccCustomerOrdersController extends Controller {
 //        return 'OK';
 
         $customerOrder = $this->customerQuotation->create($data);
-		
+
 
         // Lines stuff here in
 
@@ -385,7 +396,7 @@ class AbccCustomerOrdersController extends Controller {
         	//abi_r($line->quantity);
         	$line = $customerOrder->addProductLine( $cartline->product_id, $cartline->combination_id, $cartline->quantity, ['prices_entered_with_tax' => 0, 'unit_customer_final_price' => $cartline->unit_customer_price] );
         }
-		
+
         // At last: empty cart ( delete lines & initialize )
         $cart->delete();
 
@@ -394,11 +405,11 @@ class AbccCustomerOrdersController extends Controller {
         // 
         // Create Todo
         $data = [
-            'name' => l('Preparar un Presupuesto a un Cliente'), 
-            'description' => l('Un Cliente ha solicitado un PRESUPUESTO desde el Centro de Clientes.'), 
-            'url' => route('customerquotations.edit', [$customerOrder->id]), 
-            'due_date' => null, 
-            'completed' => 0, 
+            'name' => l('Preparar un Presupuesto a un Cliente'),
+            'description' => l('Un Cliente ha solicitado un PRESUPUESTO desde el Centro de Clientes.'),
+            'url' => route('customerquotations.edit', [$customerOrder->id]),
+            'due_date' => null,
+            'completed' => 0,
             'user_id' => \App\Context::getContext()->user->id,
         ];
 
@@ -424,7 +435,7 @@ class AbccCustomerOrdersController extends Controller {
 				'subject'  => l(' :_> New Customer Order #:num', ['num' => $template_vars['document_num']]),
 				);
 
-			
+
 
 			$send = Mail::send('emails.'.\App\Context::getContext()->language->iso_code.'.abcc.new_customer_quotation', $template_vars, function($message) use ($data)
 			{
@@ -432,7 +443,7 @@ class AbccCustomerOrdersController extends Controller {
 
 				$message->to( $data['to'], $data['toName'] )->bcc( $data['from'] )->subject( $data['subject'] );	// Will send blind copy to sender!
 
-			});	
+			});
 
         } catch(\Exception $e) {
 
@@ -473,7 +484,7 @@ class AbccCustomerOrdersController extends Controller {
         					->where('customer_id', $customer->id)
         					->first();
 
-        if (!$order) 
+        if (!$order)
         	return redirect()->route('abcc.orders.index')
                 	->with('error', l('The record with id=:id does not exist', ['id' => $id], 'layouts'));
 
@@ -488,7 +499,7 @@ class AbccCustomerOrdersController extends Controller {
 	 */
 	public function edit(Request $request)
 	{
-		// 
+		//
 	}
 
 	/**
@@ -510,7 +521,7 @@ class AbccCustomerOrdersController extends Controller {
 	 */
 	public function destroy($id)
 	{
-		// You naughty boy! 
+		// You naughty boy!
 	}
 
 
@@ -527,10 +538,10 @@ class AbccCustomerOrdersController extends Controller {
                             ->withCount('lines')
         					->first();
 
-        if (!$order) 
+        if (!$order)
         	return redirect()->route('abcc.orders.index')
                 	->with('error', l('The record with id=:id does not exist', ['id' => $id], 'layouts'));
-        
+
         $cart = \App\Context::getContext()->cart;
 
         foreach ($order->lines as $orderline) {
@@ -550,15 +561,15 @@ class AbccCustomerOrdersController extends Controller {
 
         $document = $this->customerOrder->where('id', $id)->where('customer_id', $customer->id)->first();
 
-        if (!$document) 
+        if (!$document)
         	return redirect()->route('abcc.orders.index')
                 	->with('error', l('The record with id=:id does not exist', ['id' => $id], 'layouts'));
-        
+
 
         $company = \App\Context::getContext()->company;
 
         // Get Template
-        $t = $document->template ?? 
+        $t = $document->template ??
              \App\Template::find( Configuration::getInt('ABCC_DEFAULT_ORDER_TEMPLATE') );
 
         if ( !$t )
@@ -571,7 +582,7 @@ class AbccCustomerOrdersController extends Controller {
 
         $paper = $t->paper;    // A4, letter
         $orientation = $t->orientation;    // 'portrait' or 'landscape'.
-        
+
         // Catch for errors
 		try{
         		$pdf        = \PDF::loadView( $template, compact('document', 'company') )
@@ -588,7 +599,7 @@ class AbccCustomerOrdersController extends Controller {
         $pdfName    = 'order_' . $document->secure_key . '_' . $document->document_date->format('Y-m-d');
 
         if ($request->has('screen')) return view($template, compact('document', 'company'));
-        
+
         return  $pdf->stream();
         return  $pdf->download( $pdfName . '.pdf');
 

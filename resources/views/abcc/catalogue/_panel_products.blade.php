@@ -315,8 +315,6 @@
 
                 success: function (result) {
 
-                    // loadCartlines();
-
                     $(function () {
                         $('[data-toggle="tooltip"]').tooltip()
                     });

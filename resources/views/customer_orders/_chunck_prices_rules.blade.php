@@ -21,7 +21,7 @@
     		  <th>{{l('Customer Group', 'pricerules')}}</th>
               <th>{{l('Currency')}}</th>
               <th class="text-right">{{l('Price')}}</th>
-              <th class="text-right">{{l('Discount Percent', 'pricerules')}}</th>
+              <th class="text-right">{{l('  Discount Percent', 'pricerules')}}</th>
               <th class="text-right">{{l('Discount Amount', 'pricerules')}}</th>
               <th class="text-center">{{l('From Quantity', 'pricerules')}}</th>
               <th>{{l('Date from', 'pricerules')}}</th>
@@ -39,7 +39,6 @@
       <td>{{ optional($rule->category)->name }}</td>
       <td class="text-right">
           @if($rule->product)
-
             [<a href="{{ URL::to('products/' . optional($rule->product)->id . '/edit') }}" title="{{l('View Product')}}" target="_blank">{{ optional($rule->product)->reference }}</a>]
           @else 
           	&nbsp;

@@ -59,6 +59,7 @@
 
             var url = "{{ route('abcc.cart.add') }}";
             var token = "{{ csrf_token() }}";
+            const panel = $('#panel_cart_lines');
 
             if ($('#line_product_id').val() == "") return false;
 
@@ -74,6 +75,10 @@
                 conversion_rate: $("#currency_conversion_rate").val(),
             };
 
+            panel.find('*').not('#loading_text').remove();
+            panel.addClass('loading');
+            $('#loading_text').show();
+
             $.ajax({
                 url: url,
                 headers: {'X-CSRF-TOKEN': token},
@@ -83,6 +88,7 @@
 
                 success: function () {
 
+                    panel.removeClass('loading');
                     loadCartLines();
 
                     $(function () {

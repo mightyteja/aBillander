@@ -18,7 +18,8 @@
               <th class="text-right">{{l('Price', 'abcc/customer')}}</th>
               <th class="text-right">{{l('Discount Percent', 'abcc/customer')}}</th>
               <!-- th class="text-right">{{l('Discount Amount')}}</th -->
-              <th class="text-center">{{l('From Quantity', 'abcc/customer')}}</th>
+            <th class="text-right">{{l('Extra amount')}}</th>
+            <th class="text-center">{{l('From Quantity', 'abcc/customer')}}</th>
               <th>{{l('Date from', 'abcc/customer')}}</th>
               <th>{{l('Date to', 'abcc/customer')}}</th>
         </tr>
@@ -57,6 +58,12 @@
       <td class="text-right"> </td>
       <!-- td class="text-right"> </td -->
 @endif
+
+            @if($rule->rule_type=='promo')
+                <td class="text-right">{{ $rule->extra_items }}</td>
+            @else
+                <td class="text-right"></td>
+            @endif
 
       <td class="text-center">{{ $rule->as_quantity('from_quantity') }}</td>
 

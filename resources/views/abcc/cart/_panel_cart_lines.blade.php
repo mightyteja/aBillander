@@ -197,8 +197,8 @@
                         <tr>
                             <td colspan="3"></td>
                             <td colspan="5">
-                                {{ l(' Promo: Pays ') }}{{ (int)$line->quantity }}
-                                {{ l(' and gets ') }}  {{ (int)$line->quantity+$line->product->extra_item_qty }}
+                                {{ l(' Promo: You pay ') }}{{ (int)$line->quantity }}
+                                {{ l(' and get ') }}  {{ (int)$line->quantity+$line->product->extra_item_qty }}
                             </td>
                         </tr>
                     @endif

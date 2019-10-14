@@ -2,38 +2,53 @@
 
 namespace App;
 
-use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
+// use Illuminate\Database\Eloquent\SoftDeletes;
+
 use App\Traits\ViewFormatterTrait;
 
-class PriceRule extends Model
-{
+class PriceRule extends Model {
+
     use ViewFormatterTrait;
+    //    use SoftDeletes;
 
     protected $dates = [
-        'date_from',
-        'date_to',
-    ];
+                        'date_from',
+                        'date_to'
+                       ];
 
-    protected $fillable = ['category_id', 'product_id', 'combination_id',
-                           'customer_id', 'customer_group_id',
-                           'currency_id', 'rule_type', 'discount_type',
-                           'price', 'discount_percent', 'discount_amount', 'discount_amount_is_tax_incl',
-                           'extra_items', 'from_quantity',
-                           'date_from', 'date_to',
-    ];
+	protected $fillable = [ 'category_id', 'product_id', 'combination_id',
 
-    public static $rules = [
-        'category_id'       => 'nullable|exists:categories,id',
-        'product_id'        => 'nullable|exists:products,id',
-        'combination_id'    => 'nullable|exists:combinations,id',
-        'customer_id'       => 'nullable|exists:customers,id',
-        'customer_group_id' => 'nullable|exists:customer_groups,id',
-        'currency_id'       => 'nullable|exists:currencies,id',
-        'extra_item'        => 'nullable',
-        'date_from'         => 'nullable|date',
-        'date_to'           => 'nullable|date',
-    ];
+                            'customer_id', 'customer_group_id',
+
+                            'currency_id', 'rule_type', 'discount_type',
+
+                            'price', 'discount_percent', 'discount_amount', 'discount_amount_is_tax_incl',
+
+                            'extra_items', 'from_quantity',
+
+                            'date_from', 'date_to'
+                        ];
+
+	public static $rules = array(
+                                    'category_id'       => 'nullable|exists:categories,id',
+                                    'product_id'        => 'nullable|exists:products,id',
+                                    'combination_id'    => 'nullable|exists:combinations,id',
+                                    'customer_id'       => 'nullable|exists:customers,id',
+                                    'customer_group_id' => 'nullable|exists:customer_groups,id',
+                                    'currency_id'       => 'nullable|exists:currencies,id',
+                                    'extra_item'        => 'nullable',
+                                    'date_from' => 'nullable|date',
+                                    'date_to'   => 'nullable|date',
+                                );
+    /**
+     * The relations to eager load on every query.
+     *
+     * @var array
+     */
+//    protected $with = ['currency'];
+
+
 
     /**
      * Handy method

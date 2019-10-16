@@ -113,6 +113,51 @@
    {{-- Gorrino Include --}}
    {!! file_get_contents( resource_path() . '/views/abcc/cart/bootstrap-ddl/bootstrap-ddl.js'); !!}
 
+   $(document).ready(function () {
+       $('#shipping_address_alias').change(function () {
+
+           const url = "{{ route('abcc.cart.updateaddress') }}";
+           const token = "{{ csrf_token() }}";
+           const panel = $('#panel_cart_lines');
+
+           panel.find('*').not('#loading_text').remove();
+           panel.addClass('loading');
+           $('#loading_text').show();
+
+           $.ajax({
+               type: 'POST',
+               url: url,
+               headers: {'X-CSRF-TOKEN': token},
+               dataType: 'json',
+               data: {
+                   shipping_address_id: $('#shipping_address_id').val(),
+               },
+               success: function (result) {
+                   panel.removeClass('loading');
+                   loadCartLines();
+               }
+           });
+       });
+
+       // should move this duplicated function to a general cart js file
+       function loadCartLines() {
+
+           const panel = $("#panel_cart_lines");
+           const url = "{{ route('abcc.cart.getlines') }}";
+
+           panel.addClass('loading');
+
+           $.get(url, {}, function (result) {
+               $('#panel_cart_lines span').hide();
+               panel.append(result);
+               panel.removeClass('loading');
+               $("[data-toggle=popover]").popover();
+
+               $('#badge_cart_nbr_items').html($('#cart_nbr_items').val());
+           }, 'html');
+       }
+   });
+
 </script>
 @endsection
 

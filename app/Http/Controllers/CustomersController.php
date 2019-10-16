@@ -162,7 +162,7 @@ class CustomersController extends Controller {
                 $customer->shipping_address_id  = 0;
                 $customer->save();
 
-                $this->updateCustomersCartAddresses($customer);
+                $customer->updateCustomersCartAddresses();
             }
 
             // Issue Warning!
@@ -189,7 +189,7 @@ class CustomersController extends Controller {
             }
             if ( $customer->isDirty() ) { // Model has changed
                 $customer->save();
-                $this->updateCustomersCartAddresses($customer);
+                $customer->updateCustomersCartAddresses();
             }
 
             $mainAddressIndex = 0;
@@ -220,7 +220,7 @@ class CustomersController extends Controller {
             }
             if ( $customer->isDirty() ) { // Model has changed
                 $customer->save();
-                $this->updateCustomersCartAddresses($customer);
+                $customer->updateCustomersCartAddresses();
             }
 
             $mainAddr = $customer->invoicing_address_id;
@@ -247,7 +247,8 @@ class CustomersController extends Controller {
     /**
      * Update the specified resource in storage.
      *
-     * @param  int  $id
+     * @param int     $id
+     * @param Request $request
      * @return Response
      */
     public function update($id, Request $request)
@@ -273,13 +274,14 @@ class CustomersController extends Controller {
 
              $this->validate($request, $rules);
 
-                $customer = $this->customer->find($id);
-                $customer->update($input);
+            /** @var Customer $customer */
+            $customer = $this->customer->find($id);
+            $customer->update($input);
 
-                $this->updateCustomersCartAddresses($customer);
+            $customer->updateCustomersCartAddresses();
 
-                return redirect(route('customers.edit', $id) . $section)
-                    ->with('info', l('This record has been successfully updated &#58&#58 (:id) ', ['id' => $id], 'layouts') . $request->input('name_commercial'));
+            return redirect(route('customers.edit', $id) . $section)
+                ->with('info', l('This record has been successfully updated &#58&#58 (:id) ', ['id' => $id], 'layouts') . $request->input('name_commercial'));
 
         }
 
@@ -684,28 +686,6 @@ class CustomersController extends Controller {
         
 
         return response()->json(['success'=>'Email sent.']);
-    }
-
-    /**
-     * Then saving the customer's addresses we should update the cart addresses (if exists)
-     * @param $customer
-     */
-    private function updateCustomersCartAddresses($customer)
-    {
-        /** @var Cart $cart */
-        if ($cart = $customer->cart) {
-            $cart->invoicing_address_id = $customer->invoicing_address_id;
-            $cart->shipping_address_id = $customer->shipping_address_id;
-            $cart->save();
-
-            // will need to update cart lines
-            if ($cart_lines = $cart->cartLines) {
-                $cart_lines->map(function($line) use ($cart, $customer) {
-                    $line->tax_percent = $cart->getTaxPercent($line->product, $customer);
-                    $line->save();
-                });
-            }
-        }
     }
 
 }

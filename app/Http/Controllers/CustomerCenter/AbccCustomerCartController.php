@@ -386,4 +386,18 @@ class AbccCustomerCartController extends Controller
         $cart->total_price = $cart->as_priceable($cart->amount + $cart->total_taxes) - $cart->discount1 - $cart->discount2;
     }
 
+    /**
+     * Will be called from the endpoint post abcc.cart.updateaddres
+     * @param Request $request
+     */
+    public function updateCartAddress(Request $request)
+    {
+        /** @var Customer $customer */
+        $customer = Auth::user()->customer;
+        $customer->shipping_address_id = $request->shipping_address_id;
+        $customer->updateCustomersCartAddresses();
+
+        echo json_encode(['message' => 'ok']);
+    }
+
 }

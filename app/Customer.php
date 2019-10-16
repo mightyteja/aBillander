@@ -862,4 +862,25 @@ class Customer extends Model {
         return $rules;
     }
 
+    /**
+     * Then saving the customer's addresses we should update the
+     * cart addresses (if exists)
+     */
+    public function updateCustomersCartAddresses()
+    {
+        /** @var Cart $cart */
+        if ($cart = $this->cart) {
+            $cart->invoicing_address_id = $this->invoicing_address_id;
+            $cart->shipping_address_id = $this->shipping_address_id;
+            $cart->save();
+
+            // will need to update cart lines
+            if ($cart_lines = $cart->cartLines) {
+                $cart_lines->map(function($line) use ($cart) {
+                    $line->tax_percent = $cart->getTaxPercent($line->product, $this);
+                    $line->save();
+                });
+            }
+        }
+    }
 }

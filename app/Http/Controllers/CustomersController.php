@@ -2,26 +2,20 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests;
-use App\Http\Controllers\Controller;
-
-use Illuminate\Http\Request;
-use Validator;
-
-use View, Mail;
-
-use App\Customer;
 use App\Address;
 use App\BankAccount;
+use App\Configuration;
+use App\Customer;
+use App\CustomerInvoiceLine;
 use App\CustomerOrder;
 use App\CustomerOrderLine;
-use App\CustomerInvoice;
-use App\CustomerInvoiceLine;
-use App\CustomerShippingSlip;
 use App\CustomerShippingSlipLine;
+use App\Http\Requests;
 use App\PriceRule;
-
-use App\Configuration;
+use Illuminate\Http\Request;
+use Mail;
+use Validator;
+use View;
 
 class CustomersController extends Controller {
 
@@ -165,6 +159,8 @@ class CustomersController extends Controller {
                 $customer->invoicing_address_id = 0;
                 $customer->shipping_address_id  = 0;
                 $customer->save();
+
+                $this->updateCustomersCartAddresses($customer);
             }
 
             // Issue Warning!
@@ -189,7 +185,10 @@ class CustomersController extends Controller {
                 // $customer->save();
                 $warning[] = l('Main Address has been updated for Customer (:id) :name', ['id' => $customer->id, 'name' => $customer->name_fiscal]);
             }
-            if ( $customer->isDirty() ) $customer->save();   // Model has changed
+            if ( $customer->isDirty() ) { // Model has changed
+                $customer->save();
+                $this->updateCustomersCartAddresses($customer);
+            }
 
             $mainAddressIndex = 0;
 
@@ -217,7 +216,10 @@ class CustomersController extends Controller {
                     $warning[] = l('You should set the Main Address for Customer (:id) :name', ['id' => $customer->id, 'name' => $customer->name_fiscal]);
                 }
             }
-            if ( $customer->isDirty() ) $customer->save();   // Model has changed
+            if ( $customer->isDirty() ) { // Model has changed
+                $customer->save();
+                $this->updateCustomersCartAddresses($customer);
+            }
 
             $mainAddr = $customer->invoicing_address_id;
 
@@ -271,6 +273,8 @@ class CustomersController extends Controller {
 
                 $customer = $this->customer->find($id);
                 $customer->update($input);
+
+                $this->updateCustomersCartAddresses($customer);
 
                 return redirect(route('customers.edit', $id) . $section)
                     ->with('info', l('This record has been successfully updated &#58&#58 (:id) ', ['id' => $id], 'layouts') . $request->input('name_commercial'));
@@ -678,6 +682,20 @@ class CustomersController extends Controller {
         
 
         return response()->json(['success'=>'Email sent.']);
+    }
+
+    /**
+     * Then saving the customer's addresses we should update the cart addresses (if exists)
+     * @param $customer
+     */
+    private function updateCustomersCartAddresses($customer)
+    {
+        $cart = $customer->cart;
+        if ($cart) {
+            $cart->invoicing_address_id = $customer->invoicing_address_id;
+            $cart->shipping_address_id = $customer->shipping_address_id;
+            $cart->save();
+        }
     }
 
 }

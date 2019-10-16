@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Address;
 use App\BankAccount;
+use App\Cart;
 use App\Configuration;
 use App\Customer;
 use App\CustomerInvoiceLine;
@@ -12,6 +13,7 @@ use App\CustomerOrderLine;
 use App\CustomerShippingSlipLine;
 use App\Http\Requests;
 use App\PriceRule;
+use App\Product;
 use Illuminate\Http\Request;
 use Mail;
 use Validator;
@@ -690,11 +692,19 @@ class CustomersController extends Controller {
      */
     private function updateCustomersCartAddresses($customer)
     {
-        $cart = $customer->cart;
-        if ($cart) {
+        /** @var Cart $cart */
+        if ($cart = $customer->cart) {
             $cart->invoicing_address_id = $customer->invoicing_address_id;
             $cart->shipping_address_id = $customer->shipping_address_id;
             $cart->save();
+
+            // will need to update cart lines
+            if ($cart_lines = $cart->cartLines) {
+                $cart_lines->map(function($line) use ($cart, $customer) {
+                    $line->tax_percent = $cart->getTaxPercent($line->product, $customer);
+                    $line->save();
+                });
+            }
         }
     }
 

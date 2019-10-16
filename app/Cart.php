@@ -182,7 +182,7 @@ class Cart extends Model
             return false;
         }
 
-        $tax_percent = $this->getTaxPercent($cart, $product, $customer);
+        $tax_percent = $this->getTaxPercent($product, $customer);
 
          $customer_price->applyTaxPercent($tax_percent);
 
@@ -456,16 +456,15 @@ class Cart extends Model
     }
 
     /**
-     * @param Cart $cart
      * @param      $product
      * @param      $customer
      * @return mixed
      */
-    private function getTaxPercent(Cart $cart, $product, $customer)
+    public function getTaxPercent($product, $customer)
     {
         // get the tax percent checking the taxing address,
         // while using product tax as backup data
-        $address = $cart->taxingaddress;
+        $address = $this->taxingaddress;
         $tax = $product->getTaxRules($address, $customer);
 
         if (empty($tax)) {

@@ -255,7 +255,6 @@ class AbccCustomerCartController extends Controller
             $msg = ['msg' => 'ERROR'];
         }
 
-        //$data['data'] = $line->toArray();
         return response()->json($msg);
     }
 
@@ -291,6 +290,11 @@ class AbccCustomerCartController extends Controller
             $line->update($data);
         } else {
             $line->delete();
+
+            // check if we should delete the cart in case it's empty
+            if ($cart->cartlines()->count() == 0) {
+                $cart->delete();
+            }
         }
 
         return response()->json(['msg'  => 'OK',
@@ -325,9 +329,14 @@ class AbccCustomerCartController extends Controller
 
         $order_line->delete();
 
+        // check if we should delete the cart in case it's empty
+        $cart = $this->cart->findOrFail($order_line->cart_id);
+        if ($cart->cartlines()->count() == 0) {
+            $cart->delete();
+        }
+
         // Now, update Order Totals
         // $order->makeTotals();
-
         return response()->json(['msg'  => 'OK',
                                  'data' => $line_id]);
     }

@@ -173,7 +173,7 @@
                                 {{ $line->as_priceable($line->unit_customer_price + $line->tax) }}{{ $cart->currency->sign }}
                             </td>
 
-                            <td class="text-right">{{(int)$line->tax_percent.'%'}}</td>
+                            <td class="text-right">{{round($line->tax_percent, 1) . '%'}}</td>
                         @endif
 
                         <td class="text-right">

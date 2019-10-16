@@ -123,7 +123,8 @@ class AbccCatalogueController extends Controller
                 )->getPrice()
             );
 
-            $product->price_tax_inc = $product->tax_percent = 0;
+            $product->price_tax_inc = 0;
+            $product->tax_percent = 0;
             $tax = $product->getTaxRules(null, $customer);
 
             // TODO. Several tax lines are possible?
@@ -134,7 +135,7 @@ class AbccCatalogueController extends Controller
                     $product->price
                 );
 
-                $product->tax_percent = (int)$tax_data->percent. '%';
+                $product->tax_percent = round($tax_data->percent, 1) . '%';
             }
         });
     }

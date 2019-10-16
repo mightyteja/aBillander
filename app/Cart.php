@@ -2,10 +2,9 @@
 
 namespace App;
 
-use Illuminate\Database\Eloquent\Model;
-use Auth;
-
 use App\Traits\ViewFormatterTrait;
+use Auth;
+use Illuminate\Database\Eloquent\Model;
 
 class Cart extends Model
 {
@@ -181,32 +180,13 @@ class Cart extends Model
         // Is there a Price for this Customer?
         if (!$customer_price) {
             return false;
-        }    // return redirect()->route('abcc.cart')->with('error', 'No se pudo añadir el producto porque no está en su tarifa.');      // Product not allowed for this Customer
-
-        $tax_percent = $product->tax->percent;
-
-        $customer_price->applyTaxPercent($tax_percent);
-        $unit_customer_price = $customer_price->getPrice();
-
-        return $cart->add($product, $unit_customer_price, $quantity);
-    }
-
-    public function addExtraItemLine($product_id = null, $combination_id = null, $quantity = 1.0)
-    {
-        if ($combination_id > 0) {
-            $combination = Combination::with('product')->find(intval($combination_id));
-            $product = $combination->product;
-            $product->reference = $combination->reference;
-            $product->name = $product->name . ' | ' . $combination->name;
-        } else {
-            $product = Product::find(intval($product_id));
         }
 
-        // Is there a Price for this Customer?
-        if (!$product) {
-            return false;
-        }
-        return $this->add($product, 0, $quantity);
+        $tax_percent = $this->getTaxPercent($cart, $product, $customer);
+
+         $customer_price->applyTaxPercent($tax_percent);
+
+        return $cart->add($product, $customer_price, $quantity);
     }
 
     public function addLineByAdmin($product_id = null, $combination_id = null, $quantity = 1.0)
@@ -239,18 +219,17 @@ class Cart extends Model
         // Is there a Price for this Customer?
         if (!$customer_price) {
             return false;
-        }    // return redirect()->route('abcc.cart')->with('error', 'No se pudo añadir el producto porque no está en su tarifa.');      // Product not allowed for this Customer
+        }
 
-        $tax_percent = $product->tax->percent;
+        $tax_percent = $this->getTaxPercent($cart, $product, $customer);
 
         $customer_price->applyTaxPercent($tax_percent);
-        $unit_customer_price = $customer_price->getPrice();
 
-        return $cart->add($product, $unit_customer_price, $quantity);
+        return $cart->add($product, $customer_price, $quantity);
     }
 
 
-    public function add($product = null, $price = null, $quantity = 1.0)
+    public function add($product = null, $customer_price = null, $quantity = 1.0)
     {
         // If $product is a 'product_id', instantiate product, please.
         if (is_numeric($product)) {
@@ -261,17 +240,23 @@ class Cart extends Model
             return null;
         }
 
-        if ($price === null) { // Price can be 0.0!!!
-            $price = $product->price;
+        if ($customer_price === null) { // Price can be 0.0!!!
+            $unit_customer_price = $product->price;
+            $tax_percent = $product->tax->percent;
+        } else {
+            $unit_customer_price = $customer_price->getPrice();
+            $tax_percent = $customer_price->tax_percent;
         }
 
         // Already in Cart?
         $line = $this->cartlines()->where('product_id', $product->id)->first();
-        if ($line && $price > 0) {
+        if ($line && $unit_customer_price > 0) {
             // Keep line price
 
             // Quantity
             $line->quantity += $quantity;
+            // update tax in case the customer data has changed
+            $line->tax_percent = $tax_percent;
 
             if ($line->quantity <= 0) {
                 // Remove line
@@ -285,7 +270,10 @@ class Cart extends Model
             if ($quantity > 0) {
                 // New line
                 if ($this->isEmpty()) {
+                    $customer = Auth::user()->customer;
                     $this->date_prices_updated = \Carbon\Carbon::now();
+                    // change this in case the user has updated the address
+                    $this->invoicing_address_id = $customer->invoicing_address()->id;
                     $this->save();
                 }
 
@@ -297,8 +285,8 @@ class Cart extends Model
                                              'name'                => $product->name,
                                              'quantity'            => $quantity,
                                              'measure_unit_id'     => $product->measure_unit_id,
-                                             'unit_customer_price' => $price,
-                                             'tax_percent'         => $product->tax->percent,
+                                             'unit_customer_price' => $unit_customer_price,
+                                             'tax_percent'         => $tax_percent,
                                              //       		'cart_id' => $product->,
                                              'tax_id'              => $product->tax_id,
                                          ]);
@@ -465,5 +453,24 @@ class Cart extends Model
     public function documentlines()
     {
         return $this->cartlines();
+    }
+
+    /**
+     * @param Cart $cart
+     * @param      $product
+     * @param      $customer
+     * @return mixed
+     */
+    private function getTaxPercent(Cart $cart, $product, $customer)
+    {
+        // get the tax percent checking the taxing address,
+        // while using product tax as backup data
+        $address = $cart->taxingaddress;
+        $tax = $product->getTaxRules($address, $customer);
+
+        if (empty($tax)) {
+            return $product->tax->percent;
+        }
+        return $tax->first()->percent;
     }
 }

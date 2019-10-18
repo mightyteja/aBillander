@@ -3,22 +3,22 @@
 namespace App\Http\Controllers\CustomerCenter;
 
 use App\Address;
+use App\Cart;
+use App\CartLine;
 use App\Combination;
+use App\Configuration;
 use App\Context;
 use App\Currency;
+use App\Customer;
 use App\Http\Controllers\Controller;
+use App\Product;
+use App\Traits\BillableControllerTrait;
 use Illuminate\Contracts\Routing\ResponseFactory;
 use Illuminate\Contracts\View\Factory;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use App\Customer;
-use App\Product;
-use App\Cart;
-use App\CartLine;
-use App\Configuration;
-use App\Traits\BillableControllerTrait;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -372,7 +372,22 @@ class AbccCustomerCartController extends Controller
 
             $taxes += $line->tax;
         });
-        $cart->total_taxes = $cart->as_priceable($taxes);
+
+
+        if ($customer->sales_equalization) {
+            $taxes_se = 0;
+            foreach ($cart->cartlines as $line) {
+                $line->product->sales_equalization = 1;
+                $rules = $customer->getTaxRules($line->product);
+                $se_percent = $rules->sum('percent');
+
+                $taxes_se += $se_percent / 100 * $line->unit_customer_price * $line->quantity;
+            }
+            $cart->taxes_se = $cart->as_priceable($taxes_se);
+            $cart->total_taxes = $cart->as_priceable($taxes - $taxes_se);
+        } else {
+            $cart->total_taxes = $cart->as_priceable($taxes);
+        }
 
         $discount1 = $cart->amount * $cart->customer->discount_percent / 100.0;
         $discount2 = ($cart->amount - $discount1) * $cart->customer->discount_ppd_percent / 100.0;

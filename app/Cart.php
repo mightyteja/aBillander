@@ -184,7 +184,7 @@ class Cart extends Model
 
         $tax_percent = $this->getTaxPercent($product, $customer);
 
-         $customer_price->applyTaxPercent($tax_percent);
+        $customer_price->applyTaxPercent($tax_percent);
 
         return $cart->add($product, $customer_price, $quantity);
     }
@@ -465,11 +465,17 @@ class Cart extends Model
         // get the tax percent checking the taxing address,
         // while using product tax as backup data
         $address = $this->taxingaddress;
+
+        // if the customer has que sales_equalization enabled,
+        // we need to set the product's sales_equalization to 1 to use it
+        $product->sales_equalization = 1;
+
         $tax = $product->getTaxRules($address, $customer);
 
         if (empty($tax)) {
             return $product->tax->percent;
         }
-        return $tax->first()->percent;
+        // get the sum of the percents in case there are more than one
+        return $tax->sum('percent');
     }
 }

@@ -71,6 +71,18 @@
     </tr>
 @endif
 
+@if ($cart->taxes_se)
+    <tr class="info">
+        <td colspan="4"></td>
+        <td colspan="2"><h4>{{ l('Total Sales equivalency') }}</h4></td>
+        @if($config['display_with_taxes'])
+            <td></td>
+        @endif
+        <td class="text-center lead" colspan="3">
+            <h4>{{$cart->taxes_se}}{{ $cart->currency->sign }}</h4>
+        </td>
+    </tr>
+@endif
 
 <tr class="info">
     <td colspan="4"></td>

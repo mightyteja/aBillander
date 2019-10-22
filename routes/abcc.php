@@ -94,6 +94,8 @@ Route::group(['prefix' => 'abcc', 'namespace' => '\CustomerCenter'], function ()
         Route::get('orders/{id}/duplicate', 'AbccCustomerOrdersController@duplicateOrder')->name('abcc.order.duplicate'  );
         Route::get('orders/{id}/pdf', 'AbccCustomerOrdersController@showPdf')->name('abcc.order.pdf'  );
 
+        Route::resource('/recurringorders', 'AbccCustomerRecurringOrderController')->except(['show'])->names('abcc.recurringorders');
+
         Route::resource('/shippingslips', 'AbccCustomerShippingSlipsController')->names('abcc.shippingslips');
         Route::get('shippingslips/{id}/pdf', 'AbccCustomerShippingSlipsController@showPdf')->name('abcc.shippingslip.pdf'  );
 

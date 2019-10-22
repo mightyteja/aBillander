@@ -85,6 +85,13 @@
                             </a>
                         </li>
 
+
+                        <li>
+                            <a href="{{ route('abcc.recurringorders.index') }}">
+                                {{l('Recurring Orders', [], 'abcc/layouts')}}
+                            </a>
+                        </li>
+
 @if ( \App\Configuration::isTrue('ABCC_ENABLE_SHIPPING_SLIPS') )
 
                         <li class="divider"></li>

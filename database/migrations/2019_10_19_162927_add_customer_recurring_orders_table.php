@@ -16,7 +16,6 @@ class AddCustomerRecurringOrdersTable extends Migration
         Schema::create('customer_recurring_orders', function (Blueprint $table) {
             $table->increments('id');
             $table->integer('customer_order_id')->unsigned();
-            $table->integer('customer_id')->unsigned();
             $table->timestamp('start_at')->nullable();
             $table->timestamp('next_occurring_at')->nullable();
             $table->integer('frequency');

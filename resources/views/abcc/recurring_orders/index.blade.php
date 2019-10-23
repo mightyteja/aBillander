@@ -5,14 +5,12 @@
 @section('content')
 
     <div class="page-header">
-        <div class="pull-right" style="padding-top: 4px;">
-            {{--
-                    <a href="{{ URL::to('customerorders/create') }}" class="btn btn-sm btn-success" 
-                            title="{{l('Add New Item', [], 'layouts')}}"><i class="fa fa-plus"></i> {{l('Add New', [], 'layouts')}}</a>
-            
-                    <a href="{{ route('chart.customerorders.monthly') }}" class="btn btn-sm btn-warning" 
-                            title="{{l('Reports', [], 'layouts')}}"><i class="fa fa-bar-chart-o"></i> {{l('Reports', [], 'layouts')}}</a>
-            --}}
+        <div class="pull-right">
+
+            <a class="btn btn-grey" href="{{ route('abcc.recurringorders.create') }}"
+               title="{{l('New recurring order', [], 'layouts')}}" style="margin-right: 72px">
+                <i class="fa fa-plus"></i> {{l('Create new recurring order', [], 'layouts')}}
+            </a>
         </div>
         <h2>
             {{ l('My Recurring Orders') }}
@@ -28,7 +26,6 @@
                     <thead>
                     <tr>
                         <th class="text-left">{{ l('Order #') }}</th>
-                        <th class="text-left">{{ l('Customer #') }}</th>
                         <th class="text-left">{{ l('Start at Date') }}</th>
                         <th class="text-left">{{ l('Next Occurring at Date') }}</th>
                         <th class="text-left">{{ l('Frequency') }}</th>
@@ -41,7 +38,6 @@
                     @foreach ($customer_recurring_orders as $recurring_order)
                         <tr>
                             <td>{{ $recurring_order->id }} / {{ $recurring_order->customer_order_id }}</td>
-                            <td>{{ $recurring_order->customer_id }}</td>
                             <td>{{ abi_date_form_full($recurring_order->start_at) }}</td>
                             <td>{{ abi_date_form_full($recurring_order->next_occurring_at) }}</td>
                             <td>{{ $recurring_order->frequency }}</td>

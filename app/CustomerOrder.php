@@ -3,6 +3,7 @@
 namespace App;
 
 use \App\CustomerOrderLine;
+use Carbon\Carbon;
 
 class CustomerOrder extends Billable
 {
@@ -120,6 +121,11 @@ class CustomerOrder extends Billable
     public function getQuotationAttribute()
     {
         return $this->customerquotation();
+    }
+
+    public function getCustomOrderNameAttribute()
+    {
+        return $this->document_reference . ' - ' . $this->id . ' (' . Carbon::parse($this->document_date)->format('d-m-Y') .')';
     }
 
 

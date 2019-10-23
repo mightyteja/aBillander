@@ -16,8 +16,6 @@
                     <a href="{{ route('abcc.recurringorders.index') }}">{{l('Recurring Order Detail', [], 'abcc/layouts')}}</a> &nbsp;
                     <span style="color: #cccccc;">/</span>
 
-                    <span class="badge" style="background-color: #3a87ad; margin-right: 72px;"
-                          title="{{ '' }}">{{ $recurring_order->customerOrder->currency->iso_code }}</span></h2>
             </div>
         </div>
     </div>
@@ -28,15 +26,14 @@
                 <div class="panel panel-info">
                     <div class="panel-heading">
                         <h3 class="panel-title">
-                            {{ l('Edit Recurring Order') }} :: ({{$recurring_order->id}}) -
-                            <a href="{{route('abcc.orders.show', $recurring_order->customerOrder->id)}}">Original Order {{$recurring_order->customerOrder->id}}</a>
+                            {{ l('Create Recurring Order') }}
                         </h3>
                     </div>
                     <div class="panel-body">
 
                         @include('errors.list')
 
-                        {!! Form::model($recurring_order, array('method' => 'PATCH', 'route' => array('abcc.recurringorders.update', $recurring_order->id))) !!}
+                        {!! Form::model($recurring_order, array('method' => 'POST', 'route' => array('abcc.recurringorders.store'))) !!}
 
                         @include('abcc.recurring_orders._form')
 

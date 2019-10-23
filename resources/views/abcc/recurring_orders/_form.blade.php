@@ -1,5 +1,5 @@
 <div class="row">
-    <div class="form-group col-lg-4 col-md-4 col-sm-4">
+    <div class="form-group col-lg-6 col-md-6 col-sm-6">
         {!! Form::label('customer_order_id', l('Original Order')) !!}
         {!! Form::select('customer_order_id', $customer_orders, null, array('class' => 'form-control')) !!}
     </div>
@@ -9,11 +9,11 @@
 
     <div class="form-group col-lg-6 col-md-6 col-sm-6">
         {!! Form::label('next_occurring_at', l('Start At')) !!}
-        {{ Form::input('dateTime-local', 'start_at', date('Y-m-d\TH:i', strtotime($recurring_order->next_occurring_at)), array('class' => 'form-control')) }}
+        {{ Form::input('dateTime-local', 'start_at', date('Y-m-d\TH:i',  strtotime($recurring_order->start_at)), array('class' => 'form-control')) }}
     </div>
     <div class="form-group col-lg-6 col-md-6 col-sm-6">
         {!! Form::label('next_occurring_at', l('Next occurring At')) !!}
-        {{ Form::input('dateTime-local', 'start_at', date('Y-m-d\TH:i', strtotime($recurring_order->next_occurring_at)), array('class' => 'form-control')) }}
+        {{ Form::input('dateTime-local', 'next_occurring_at', date('Y-m-d\TH:i', strtotime($recurring_order->next_occurring_at)), array('class' => 'form-control', 'disabled' => true)) }}
     </div>
 </div>
 

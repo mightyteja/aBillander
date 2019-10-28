@@ -144,6 +144,7 @@ Route::group(['middleware' =>  ['restrictIp', 'auth', 'context']], function()
         // Helferin
         Route::get('/helferin/home', 'HelferinController@index')->name('helferin.home');
         Route::post('/helferin/reports/sales'  , 'HelferinController@reportSales'  )->name('helferin.reports.sales');
+        Route::post('/helferin/reports/ecotaxes'  , 'HelferinController@reportEcotaxes'  )->name('helferin.reports.ecotaxes');
 
 
         Route::resource('configurations',    'ConfigurationsController');
@@ -178,6 +179,14 @@ Route::group(['middleware' =>  ['restrictIp', 'auth', 'context']], function()
         Route::resource('salesrepusers', 'SalesRepUsersController');
         Route::get('salesrepusers/create/withsalesrep/{salesrep}', 'SalesRepUsersController@createWithSalesRep')->name('salesrep.createuser');
         Route::get('salesrepusers/{salesrep}/impersonate', 'SalesRepUsersController@impersonate')->name('salesrep.impersonate');
+        Route::get('salesrepusers/{salesrep}/getuser' , 'SalesRepUsersController@getUser' )->name('salesrepuser.getuser' );
+        Route::get('salesreps/{salesrep}/getusers', 'SalesRepsController@getUsers')->name('salesrep.getusers');
+
+        Route::resource('commissionsettlements',          'CommissionSettlementsController');
+//        Route::resource('commissionsettlements.documents', 'CommissionSettlementLinesController');
+        Route::post('commissionsettlements/add/document', 'CommissionSettlementsController@addDocument')->name('commissionsettlements.add.document');
+        Route::get('commissionsettlements/{id}/calculate', 'CommissionSettlementsController@calculate')->name('commissionsettlements.calculate');
+        Route::post('commissionsettlementlines/{id}/unlink', 'CommissionSettlementLinesController@unlink')->name('commissionsettlementline.unlink');
 
         Route::resource('suppliers', 'SuppliersController');
 
@@ -294,6 +303,7 @@ Route::group(['middleware' =>  ['restrictIp', 'auth', 'context']], function()
         Route::post('mail', 'MailController@store');
 
         Route::resource('paymentmethods', 'PaymentMethodsController');
+        Route::resource('paymenttypes', 'PaymentTypesController');
 
         Route::resource('shippingmethods', 'ShippingMethodsController');
 

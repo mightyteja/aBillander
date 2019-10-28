@@ -44,12 +44,14 @@
                             <td>{{ $recurring_order->active }}</td>
 
                             <td class="text-right">
-                            <!--<a class="btn btn-sm btn-grey" href="{{ route('abcc.order.pdf', [$recurring_order->id]) }}"
-                                   title="{{l('PDF Export', [], 'layouts')}}" target="_blank"><i class="fa fa-file-pdf-o"></i></a>
-                                <a class="btn btn-sm btn-warning" href="{{ route('abcc.order.duplicate', [$recurring_order->id]) }}"
-                                   title="{{l('Copy Order to Cart')}}"><i class="fa fa-copy"></i></a>-->
                                 <a class="btn btn-sm btn-warning" href="{{ route('abcc.recurringorders.edit', [$recurring_order->id]) }}"
                                    title="{{l('View', [], 'layouts')}}"><i class="fa fa-pencil"></i></a>
+
+                                <a class="btn btn-sm btn-danger delete-item" data-html="false" data-toggle="modal"
+                                   href="{{route('abcc.recurringorders.destroy', [$recurring_order->id] ) }}"
+                                   data-content="{{l('You are going to delete a record. Are you sure?', [], 'layouts')}}"
+                                   onClick="return false;" title="{{l('Delete', [], 'layouts')}}"><i class="fa fa-trash-o"></i></a>
+
                             </td>
                         </tr>
                     @endforeach
@@ -78,6 +80,8 @@
 
 {{-- *************************************** --}}
 
+
+@include('layouts/modal_delete')
 
 @section('scripts') @parent
 

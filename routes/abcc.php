@@ -95,6 +95,7 @@ Route::group(['prefix' => 'abcc', 'namespace' => '\CustomerCenter'], function ()
         Route::get('orders/{id}/pdf', 'AbccCustomerOrdersController@showPdf')->name('abcc.order.pdf'  );
 
         Route::resource('/recurringorders', 'AbccCustomerRecurringOrderController')->except(['show'])->names('abcc.recurringorders');
+        Route::get('/recurringorders/cron', 'AbccCustomerRecurringOrderController@cron')->name('abcc.recurringorders.cron');
 
         Route::resource('/shippingslips', 'AbccCustomerShippingSlipsController')->names('abcc.shippingslips');
         Route::get('shippingslips/{id}/pdf', 'AbccCustomerShippingSlipsController@showPdf')->name('abcc.shippingslip.pdf'  );

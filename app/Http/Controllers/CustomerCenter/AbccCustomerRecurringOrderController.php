@@ -2,15 +2,21 @@
 
 namespace App\Http\Controllers\CustomerCenter;
 
+use App\Context;
 use App\CustomerOrder;
 use App\CustomerRecurringOrder;
 use App\Http\Controllers\Controller;
+use App\Sequence;
 use Carbon\Carbon;
+use Exception;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Mail;
 
 class AbccCustomerRecurringOrderController extends Controller
 {
+
     /**
      * Display a listing of the resource.
      *
@@ -36,7 +42,19 @@ class AbccCustomerRecurringOrderController extends Controller
         $recurring_order->start_at = now();
         $recurring_order->next_occurring_at = now();
         $customer_orders = $this->getFormattedCustomerOrdersForDropdown();
-        return view('abcc.recurring_orders.create', compact('recurring_order','customer_orders'));
+
+        return view('abcc.recurring_orders.create', compact('recurring_order', 'customer_orders'));
+    }
+
+    /**
+     * @return mixed
+     */
+    private function getFormattedCustomerOrdersForDropdown()
+    {
+        // custom_order_name alias defined in CustomerOrder
+        return CustomerOrder::ofLoggedCustomer()
+                            ->get()
+                            ->pluck('custom_order_name', 'id');
     }
 
     /**
@@ -53,12 +71,10 @@ class AbccCustomerRecurringOrderController extends Controller
                                            ->addDays($data['frequency'])
                                            ->toDateTimeLocalString();
 
-        $recurring_order = new CustomerRecurringOrder();
         CustomerRecurringOrder::create($data);
 
-        return redirect()->route('abcc.recurringorders.index');
+        return redirect()->route('abcc.recurringorders.index')->with('success', l('Created recurring order'));
     }
-
 
     /**
      * Show the form for editing the specified resource.
@@ -98,7 +114,7 @@ class AbccCustomerRecurringOrderController extends Controller
 
         $recurring_order->update($data);
 
-        return redirect()->route('abcc.recurringorders.index');
+        return redirect()->route('abcc.recurringorders.index')->with('success', l('Updated recurring order'));
     }
 
     /**
@@ -109,18 +125,95 @@ class AbccCustomerRecurringOrderController extends Controller
      */
     public function destroy($id)
     {
-        //
+        $recurring_order = CustomerRecurringOrder::getRecurringOrder($id);
+        $recurring_order->delete();
+
+        return redirect()->route('abcc.recurringorders.index')->with('success', l('Deleted recurring order'));
+    }
+
+    public function cron()
+    {
+        $pending_recurring_orders = CustomerRecurringOrder::getRecurringOrdersForCron();
+
+        /** @var CustomerRecurringOrder $recurring_order */
+        foreach ($pending_recurring_orders as $recurring_order) {
+
+            if ($recurring_order->next_occurring_at <= now()) {
+                // Create order and notify
+                $this->createNewCustomerOrder($recurring_order);
+                $this->notifyNewCustomerOrder($recurring_order);
+
+                // update next occurrence
+                //$recurring_order->next_occurring_at = now()->addDays($recurring_order->frequency);
+                //$recurring_order->save();
+
+                echo 'Created new order from recurring order: ' . $recurring_order->id;
+            } else {
+                echo 'Nothing to to with recurring order: ' . $recurring_order->id . '<br />';
+            }
+        }
     }
 
     /**
-     * @return mixed
+     * @param $recurring_order
      */
-    private function getFormattedCustomerOrdersForDropdown()
+    private function createNewCustomerOrder($recurring_order)
     {
-        // custom_order_name alias defined in CustomerOrder
-        $customer_orders = CustomerOrder::ofLoggedCustomer()
-                                        ->get()
-                                        ->pluck('custom_order_name', 'id');
-        return $customer_orders;
+        $new_order = $recurring_order->customerOrder->replicate();
+
+        // minor changes
+        $new_order->created_via = 'cron'; // ??
+        $new_order->document_date = now();
+
+        $seq = Sequence::find($new_order->sequence_id);
+        $doc_id = $seq->getNextDocumentId();
+
+        $new_order->document_prefix = $seq->prefix;
+        $new_order->document_id = $doc_id;
+        $new_order->document_reference = $seq->getDocumentReference($doc_id);
+
+        $new_order->status = 'confirmed';
+        $new_order->validation_date = now();
+
+        $new_order->save();
+    }
+
+    /**
+     * @param $recurring_order
+     * @return RedirectResponse
+     */
+    private function notifyNewCustomerOrder($recurring_order)
+    {
+        try {
+
+            $template_vars = [
+                'document_num'   => $recurring_order->document_reference,
+                'document_date'  => abi_date_short($recurring_order->document_date),
+                'document_total' => $recurring_order->as_money('total_tax_excl'),
+            ];
+
+            $data = [
+                'from'     => abi_mail_from_address(),
+                'fromName' => abi_mail_from_name(),
+                'to'       => abi_mail_from_address(),
+                'toName'   => abi_mail_from_name(),
+                'subject'  => l(' :_> New Customer Order #:num', ['num' => $template_vars['document_num']]),
+            ];
+
+
+            $name = 'emails.' . Context::getContext()->language->iso_code . '.abcc.new_customer_order';
+            $send = Mail::send($name, $template_vars, function ($message) use ($data) {
+                $message->from($data['from'], $data['fromName']);
+
+                $message->to($data['to'], $data['toName'])->bcc($data['from'])->subject($data['subject']);    // Will send blind copy to sender!
+            });
+        }
+        catch (Exception $e) {
+
+            // TODO. change this. notify somehow
+            return redirect()->route('abcc.recurringorders.index')
+                             ->with('error', l('There was an error. Your message could not be sent.', [], 'layouts') . '<br />' .
+                                             $e->getMessage());
+        }
     }
 }

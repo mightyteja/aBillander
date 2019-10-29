@@ -144,8 +144,8 @@ class AbccCustomerRecurringOrderController extends Controller
                 $this->notifyNewCustomerOrder($recurring_order);
 
                 // update next occurrence
-                //$recurring_order->next_occurring_at = now()->addDays($recurring_order->frequency);
-                //$recurring_order->save();
+                $recurring_order->next_occurring_at = now()->addDays($recurring_order->frequency);
+                $recurring_order->save();
 
                 echo 'Created new order from recurring order: ' . $recurring_order->id;
             } else {

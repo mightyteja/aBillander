@@ -114,7 +114,7 @@ class AbccCustomerOrdersController extends Controller {
 
 
         $cart->cartlines->map(function ($line) use ($customer, &$cart) {
-            if ($line->product->hasQuantityPriceRulesApplicable($line->quantity, $customer)) {
+            if ($line->product->hasApplicableQuantityPriceRules($line->quantity, $customer)) {
 
                 $rule = $line->product->getQuantityPriceRules($customer)->first();
 

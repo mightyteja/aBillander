@@ -1053,15 +1053,15 @@ class Product extends Model {
      * Validate if a Price Rule still applies for a product in cart
      * (in quantity and in date validity)
      *
-     * @param               $qty_in_cart
+     * @param               $qty
      * @param Customer|null $customer
      * @return bool
      */
-    public function hasQuantityPriceRulesApplicable($qty_in_cart, Customer $customer = null)
+    public function hasApplicableQuantityPriceRules($qty, Customer $customer = null)
     {
         /** @var PriceRule $price_rule */
         foreach ($this->getQuantityPriceRules($customer) as $price_rule) {
-            if ($price_rule->applies($qty_in_cart)) {
+            if ($price_rule->applies($qty)) {
                 return true;
             }
         }

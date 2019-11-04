@@ -47,7 +47,7 @@ class Payment extends Model {
             'due_date' => 'required|date',
 //            'payment_date' => 'date',
 //   Fuck yeah :=>           'amount' => 'numeric|min:0|max:',
-              'amount' => 'numeric|max:',
+              'amount' => 'numeric',    // |max:',
 	];
 
 
@@ -276,6 +276,18 @@ class Payment extends Model {
             $query->whereHas('customer', function ($query) use ($id) {
                     $query->where('id', $id);
                 });
+        }
+
+        if (isset($params['name']) && $params['name'] != '') {
+            $name = $params['name'];
+
+            $query->whereHas('customer', function ($query) use ($name) {
+                    $query->where(function ($query1) use ($name) {
+                        $query1->where('name_fiscal', 'LIKE', '%' . $name . '%')
+                               ->OrWhere('name_commercial', 'LIKE', '%' . $name . '%');
+                });
+
+            });
         }
 
         if ( array_key_exists('amount', $params) && $params['amount']  != '' )

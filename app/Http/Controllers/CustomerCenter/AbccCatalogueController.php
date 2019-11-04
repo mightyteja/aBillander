@@ -135,7 +135,7 @@ class AbccCatalogueController extends Controller
                     $product->price
                 );
 
-                $product->tax_percent = round($tax_data->percent, 1) . '%';
+                $product->tax_percent = $product->as_percentable($tax_data->percent, 1);
             }
         });
     }

@@ -173,7 +173,7 @@
                                         <br/><p class="text-muted">{{ $product->price_tax_inc - $product->getEcotax() }}</p>
                                     @endif
                                 </td>
-                                <td>{{$product->tax_percent }}</td>
+                                <td>{{$product->tax_percent }}%</td>
                                 {{--<td>{{ (int)$product->tax->percent }}%</td>--}}
                             @endif
 

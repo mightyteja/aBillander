@@ -195,7 +195,7 @@ return [
 	'ABCC_OUT_OF_STOCK_TEXT.name' => 'Texto que se mostrará cuando se permiten Pedidos sin Stock',
 	'ABCC_OUT_OF_STOCK_TEXT.help' => '',
 	'ABCC_ORDERS_NEED_VALIDATION.name' => 'Los Pedidos de Clientes necesitan Validación',
-	'ABCC_ORDERS_NEED_VALIDATION.help' => '1: Los Pedidos de Clientes se crearán con Estado = "<strong>draft</strong>".<br />0: Los Pedidos de Clientes se crearán con Estado = "<strong>confirmed</strong>".',
+	'ABCC_ORDERS_NEED_VALIDATION.help' => '1: Los Pedidos grabados por Clientes se crearán con Estado = "<strong>draft</strong>".<br />0: Los Pedidos grabados por Clientes se crearán con Estado = "<strong>confirmed</strong>".',
 	'ABCC_ENABLE_QUOTATIONS.name' => 'Activar Presupuestos',
 	'ABCC_ENABLE_QUOTATIONS.help' => 'El Cliente podrá solicitar Presupuesto para el contenido del Carrito.',
 	'ABCC_ENABLE_SHIPPING_SLIPS.name' => 'Activar Albaranes',
@@ -240,6 +240,8 @@ return [
 	'ABSRC_DEFAULT_PASSWORD.name' => 'Contraseña por defecto',
 	'ABSRC_DEFAULT_PASSWORD.help' => 'Esta Contraseña será asignada cuando se permite a un Agente acceder al Centro de Agentes. Más adelante podrá cambiarse.',
 	
+	'ABSRC_ALLOW_ABCC_ACCESS.name' => 'Permitir dar acceso al Centro de Clientes',
+	'ABSRC_ALLOW_ABCC_ACCESS.help' => 'El Agente puede permitir a un Cliente que acceda al Centro de Clientes.',
 	'ABSRC_ITEMS_PERPAGE.name' => 'Items por página',
 	'ABSRC_ITEMS_PERPAGE.help' => 'Número de items (máximo) para resultados paginados.',
 

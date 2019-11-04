@@ -62,6 +62,7 @@
 
 function checkFields() 
 {
+
   var amount = parseFloat($("#amount").val());
   var amount_initial = parseFloat($("#amount_initial").val());
 
@@ -72,6 +73,11 @@ function checkFields()
 
           $("#amount_next").val(0);
 
+// Check amount
+
+// Positive amount
+if ( amount_initial > 0 )
+{
    if ( (amount<0.0) || (amount > amount_initial) ) 
    {
       $("#amount_check").show();
@@ -88,6 +94,30 @@ function checkFields()
 
   //    }
    }
+} // Positive amount ENDS
+
+
+// Negative amount
+if ( amount_initial < 0 )
+{
+   if ( (amount>0.0) || (amount < amount_initial) ) 
+   {
+      $("#amount_check").show();
+      return false;
+   } else {
+
+      if (amount > amount_initial) {
+          $("#amount_next").val(amount_initial - amount);
+          $("#voucher_next").show();
+
+      } // else {
+
+          return true;
+
+  //    }
+   }
+} // Negative amount ENDS
+
 }
 
 function make_payment()

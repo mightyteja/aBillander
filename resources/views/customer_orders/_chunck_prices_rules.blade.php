@@ -21,7 +21,7 @@
     		  <th>{{l('Customer Group', 'pricerules')}}</th>
               <th>{{l('Currency')}}</th>
               <th class="text-right">{{l('Price')}}</th>
-              <th class="text-right">{{l('  Discount Percent', 'pricerules')}}</th>
+              <th class="text-right">{{l('Discount Percent', 'pricerules')}}</th>
               <th class="text-right">{{l('Discount Amount', 'pricerules')}}</th>
               <th class="text-center">{{l('From Quantity', 'pricerules')}}</th>
               <th>{{l('Date from', 'pricerules')}}</th>

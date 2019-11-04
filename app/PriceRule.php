@@ -38,9 +38,9 @@ class PriceRule extends Model {
                                     'customer_id'       => 'nullable|exists:customers,id',
                                     'customer_group_id' => 'nullable|exists:customer_groups,id',
                                     'currency_id'       => 'nullable|exists:currencies,id',
-                                    'extra_item'        => 'nullable',
-                                    'date_from' => 'nullable|date',
-                                    'date_to'   => 'nullable|date',
+                                    'extra_items'       => 'nullable',
+                                    'date_from'         => 'nullable|date',
+                                    'date_to'           => 'nullable|date',
                                 );
     /**
      * The relations to eager load on every query.

@@ -315,7 +315,7 @@ class AbccCustomerCartController extends Controller
 
         $cart = Context::getContext()->cart;
 
-        $this->calculateCartTotals($cart, $this->customer);
+        $cart->calculateTotals();
 
         $config['display_with_taxes'] = $this->customer_user->canDisplayPricesTaxInc();
 
@@ -339,66 +339,6 @@ class AbccCustomerCartController extends Controller
         // $order->makeTotals();
         return response()->json(['msg'  => 'OK',
                                  'data' => $line_id]);
-    }
-
-    /**
-     * From the cart lines, calculate taxes total, discounts and order total
-     *
-     * @param $cart
-     * @param $customer
-     */
-    public function calculateCartTotals($cart, $customer)
-    {
-        $taxes = 0;
-        $cart->cartlines->map(function ($line) use (&$taxes, $customer) {
-            $line->img = $line->product->getFeaturedImage();
-            $line->tax = $line->tax_percent / 100 *
-                         $line->unit_customer_price * $line->quantity;
-            $line->price_without_taxes = $line->unit_customer_price * $line->quantity;
-            $line->price_with_taxes = $line->tax + $line->price_without_taxes;
-
-            if ($line->product->hasQuantityPriceRulesApplicable($line->quantity, $customer)) {
-
-                 $rule = $line->product->getQuantityPriceRules($customer)->first();
-
-                if ($rule->rule_type === 'promo') {
-                    $line->product->has_extra_item_applied = true;
-                    $line->product->extra_item_qty = $rule->extra_items;
-                } else {
-                    $line->product->has_price_rule_applied = true;
-                    $line->product->previous_price = $line->product->getPrice()->price;
-                }
-            }
-
-            $taxes += $line->tax;
-        });
-
-
-        if ($customer->sales_equalization) {
-            $taxes_se = 0;
-            foreach ($cart->cartlines as $line) {
-                $line->product->sales_equalization = 1;
-                $rules = $customer->getTaxRules($line->product);
-                $se_percent = $rules->sum('percent');
-
-                $taxes_se += $se_percent / 100 * $line->unit_customer_price * $line->quantity;
-            }
-            $cart->taxes_se = $cart->as_priceable($taxes_se);
-            $cart->total_taxes = $cart->as_priceable($taxes - $taxes_se);
-        } else {
-            $cart->total_taxes = $cart->as_priceable($taxes);
-        }
-
-        $discount1 = $cart->amount * $cart->customer->discount_percent / 100.0;
-        $discount2 = ($cart->amount - $discount1) * $cart->customer->discount_ppd_percent / 100.0;
-
-        $cart->discounts_applied = $discount1 > 0 || $discount2 > 0;
-
-        $cart->discount1 = $cart->as_priceable($discount1);
-        $cart->discount2 = $cart->as_priceable($discount2);
-
-        $cart->total_products = $cart->as_priceable($cart->amount) - $cart->discount1 - $cart->discount2;
-        $cart->total_price = $cart->as_priceable($cart->amount + $cart->total_taxes) - $cart->discount1 - $cart->discount2;
     }
 
     /**

@@ -284,7 +284,7 @@ class AbccCustomerCartController extends Controller
 
         if ($quantity > 0) {
             $data = ['quantity' => $quantity];
-            if ($line->product->hasQuantityPriceRulesApplicable($customer_user->customer)) {
+            if ($line->product->hasApplicableQuantityPriceRules($customer_user->customer)) {
                 $data['unit_customer_price'] = $customer_user->customer->getPrice($line->product, $quantity)->price;
             }
             $line->update($data);

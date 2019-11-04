@@ -11,6 +11,8 @@ use App\CustomerOrder;
 use App\CustomerShippingSlip;
 use App\CustomerInvoice;
 
+use App\Ecotax;
+
 use Excel;
 
 use App\Traits\DateFormFormatterTrait;
@@ -239,7 +241,9 @@ foreach ($customers as $customer) {
                 $row[] = $customer->nbr_documents;
                 $row[] = $customer->products_price * 1.0;
                 $row[] = $customer->products_total * 1.0;
-                $row[] = 100.0 * ($customer->products_price - $customer->products_total) / $customer->products_price;
+                $row[] = $customer->products_price != 0.0
+                            ? 100.0 * ($customer->products_price - $customer->products_total) / $customer->products_price
+                            : 0.0;
                 $row[] = $customer->products_cost * 1.0;
                 $row[] = \App\Calculator::margin( $customer->products_cost, $customer->products_total, $customer->currency ) * 1.0;
                 $row[] = $customer->products_profit * 1.0;
@@ -312,6 +316,234 @@ foreach ($customers as $customer) {
                 ->with('success', l('This record has been successfully updated &#58&#58 (:id) ', ['id' => ''], 'layouts'));
 
     }
+
+
+    public function reportEcotaxes(Request $request)
+    {
+        // Dates (cuen)
+        $this->mergeFormDates( ['ecotaxes_date_from', 'ecotaxes_date_to'], $request );
+
+        $date_from = $request->input('ecotaxes_date_from')
+                     ? \Carbon\Carbon::createFromFormat('Y-m-d', $request->input('ecotaxes_date_from'))->startOfDay()
+                     : null;
+        
+        $date_to   = $request->input('ecotaxes_date_to'  )
+                     ? \Carbon\Carbon::createFromFormat('Y-m-d', $request->input('ecotaxes_date_to'  ))->endOfDay()
+                     : null;
+
+        $model = $request->input('ecotaxes_model', Configuration::get('RECENT_SALES_CLASS'));
+
+        $models = $this->models;
+        if ( !in_array($model, $models) )
+            $model = Configuration::get('RECENT_SALES_CLASS');
+        $document_model = $model;
+        $document_class = '\App\\'.$document_model;
+        $model .= 'Line';
+        $class = '\App\\'.$model;
+        $table = snake_case(str_plural($model));
+        $route = str_replace('_', '', $table);
+
+        // Lets see ecotaxes
+        $all_ecotaxes = Ecotax::get()->sortByDesc('amount');
+        // $check=collect([]);
+
+
+        // Lets get dirty!!
+
+
+        // Initialize the array which will be passed into the Excel generator.
+        $data = [];
+
+        if ( $request->input('ecotaxes_date_from_form') && $request->input('ecotaxes_date_to_form') )
+        {
+            $ribbon = 'entre ' . $request->input('ecotaxes_date_from_form') . ' y ' . $request->input('ecotaxes_date_to_form');
+
+        } else
+
+        if ( !$request->input('ecotaxes_date_from_form') && $request->input('ecotaxes_date_to_form') )
+        {
+            $ribbon = 'hasta ' . $request->input('ecotaxes_date_to_form');
+
+        } else
+
+        if ( $request->input('ecotaxes_date_from_form') && !$request->input('ecotaxes_date_to_form') )
+        {
+            $ribbon = 'desde ' . $request->input('ecotaxes_date_from_form');
+
+        } else
+
+        if ( !$request->input('ecotaxes_date_from_form') && !$request->input('ecotaxes_date_to_form') )
+        {
+            $ribbon = 'todas';
+
+        }
+
+        $ribbon = 'fecha ' . $ribbon;
+
+        $nbr_documents = $document_class::
+                          whereHas('lines', function ($query) {
+
+                                $query->where('line_type', 'product');
+                                $query->where('ecotax_id', '>', 0);
+                        })
+                        ->when($date_from, function($query) use ($date_from) {
+
+                                $query->where('document_date', '>=', $date_from.' 00:00:00');
+                        })
+                        ->when($date_to, function($query) use ($date_to) {
+
+                                $query->where('document_date', '<=', $date_to.' 23:59:59');
+                        })
+//                        ->orderBy('document_date', 'asc')
+                        ->get()
+                        ->count();
+/*
+        foreach ($nbr_documents as $v) {
+            # code...
+            echo $v->id." &nbsp; ".$v->document_reference."<br />";
+        }
+            echo " &nbsp; Total Facturas: ".$nbr_documents->count()."<br />";die();
+*/
+
+        // Sheet Header Report Data
+        $data[] = [\App\Context::getContext()->company->name_fiscal];
+        $data[] = ['Informe de RAEE ('.$nbr_documents.' '.l(str_replace("Line","",$model)).') ' . $ribbon, '', '', '', date('d M Y H:i:s')];
+        $data[] = [''];
+
+
+        // Define the Excel spreadsheet headers
+        $header_names = ['ID', 'Nombre del Eco-Impuesto', 'Cantidad del Impuesto', 'Unidades', 'Cantidad Total'];
+
+        $data[] = $header_names;
+
+        // Nice! Lets move on and retrieve Document Lines by Ecotax
+        $total =  0.0;
+        $nbr = 0;
+        
+        foreach ($all_ecotaxes as $all_ecotax) {
+            # code...
+            $ecotax_id = $all_ecotax->id;
+
+            $lines =  $class::
+                          where('line_type', 'product')
+                        ->whereHas('ecotax', function ($query) use ($ecotax_id) {
+
+                                if ( (int) $ecotax_id > 0 )
+                                    $query->where('id', $ecotax_id);
+                        })
+                        ->whereHas('document', function ($query) use ($date_from, $date_to) {
+
+                                if ( $date_from )
+                                    $query->where('document_date', '>=', $date_from);
+                                
+                                if ( $date_to )
+                                    $query->where('document_date', '<=', $date_to);
+                        })
+                        ->get();
+
+            // abi_r($lines->toArray());   // die();
+
+                        $total_lines = $lines->sum('ecotax_total_amount');
+                        $nbr_lines = round($total_lines / $all_ecotax->amount);
+
+                        // Do populate
+                        $row = [];
+                        $row[] = $all_ecotax->id;
+                        $row[] = (string) $all_ecotax->name;
+                        $row[] = $all_ecotax->amount * 1.0;
+                        $row[] = $nbr_lines * 1.0;
+                        $row[] = $total_lines * 1.0;
+                        $row[] = $lines->unique('customer_invoice_id')->count();
+            
+                        $data[] = $row;
+
+                        $total += $total_lines;
+                        $nbr   += $nbr_lines;
+
+                        // $check = $check->merge( $lines->unique('customer_invoice_id') );
+        }
+
+        // Totals
+        $data[] = [''];
+        $data[] = ['', '', 'Total:', $nbr, $total ];
+
+        // check
+        // $data[] = [''];
+        // $data[] = ['', '', 'Total:', $check->unique('customer_invoice_id')->count() ];
+
+//        $i = count($data);
+
+        $sheetName = 'Informe RAEE ' . l(str_replace("Line","",$model));
+
+        // Generate and return the spreadsheet
+        Excel::create('Informe RAEE', function($excel) use ($sheetName, $data) {
+
+            // Set the spreadsheet title, creator, and description
+            // $excel->setTitle('Payments');
+            // $excel->setCreator('Laravel')->setCompany('WJ Gilmore, LLC');
+            // $excel->setDescription('Price List file');
+
+            // Build the spreadsheet, passing in the data array
+            $excel->sheet($sheetName, function($sheet) use ($data) {
+                
+                $sheet->mergeCells('A1:C1');
+                $sheet->mergeCells('A2:C2');
+
+                $sheet->getStyle('A4:E4')->applyFromArray([
+                    'font' => [
+                        'bold' => true
+                    ]
+                ]);
+
+                $sheet->setColumnFormat(array(
+//                    'B' => 'dd/mm/yyyy',
+//                    'C' => 'dd/mm/yyyy',
+                    'B' => '@',
+                    'C' => '0.00',
+                    'D' => '0',
+                    'E' => '0.00',
+
+                ));
+                
+                $n = count($data);
+                $m = $n;    //  - 3;
+                $sheet->getStyle("C$m:E$n")->applyFromArray([
+                    'font' => [
+                        'bold' => true
+                    ]
+                ]);
+
+                $sheet->fromArray($data, null, 'A1', false, false);
+            });
+
+        })->download('xlsx');
+
+
+        return redirect()->back()
+                ->with('success', l('This record has been successfully updated &#58&#58 (:id) ', ['id' => ''], 'layouts'));
+
+
+
+
+
+
+
+
+                     abi_r($data);die();
+                     abi_r($date_from.' - '.$date_to.' - '.$class);die();
+    }
+
+
+
+
+/* ********************************************************************************************* */ 
+
+
+/* ********************************************************************************************* */  
+
+ 
+
+
 
 
     public function reportInvoices(Request $request)

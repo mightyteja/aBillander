@@ -43,10 +43,10 @@ class CustomerUsersController extends Controller
      */
     public function create()
     {
-        //
-
+        // 
+        
 //        return view('customer_orders.create', compact('sequenceList'));
-
+    
     }
 
     /**
@@ -76,7 +76,7 @@ class CustomerUsersController extends Controller
         /// $this->validate($request, CustomerUser::$rules);
         $validator = Validator::make($request->all(), CustomerUser::$rules);
 
-
+    
 
         if ( !$validator->passes() ) {
 
@@ -85,14 +85,14 @@ class CustomerUsersController extends Controller
         }
 
         // Do move on!
-
+        
         $password = \Hash::make($request->input('password'));
         $request->merge( ['password' => $password] );
-
+        
         $request->merge( ['language_id' => $request->input('language_id', $customer->language_id)] );
 
         if (
-                $request->input('enable_min_order') ||
+                $request->input('enable_min_order') || 
                 (( $request->input('enable_min_order') == -1 ) && Configuration::isTrue('ABCC_ENABLE_MIN_ORDER'))
         )
             ;
@@ -102,7 +102,7 @@ class CustomerUsersController extends Controller
         $customeruser = $this->customeruser->create($request->all());
 
         // Notify Customer
-        //
+        // 
         // $customer = $this->customeruser->customer;
 
 
@@ -123,7 +123,7 @@ class CustomerUsersController extends Controller
                 'subject'  => l(' :_> Confirmación de acceso al Centro de Clientes de :company', ['company' => \App\Context::getcontext()->company->name_fiscal]),
                 );
 
-
+            
 
             $send = Mail::send('emails.'.\App\Context::getContext()->language->iso_code.'.invitation_confirmation', $template_vars, function($message) use ($data)
             {
@@ -131,7 +131,7 @@ class CustomerUsersController extends Controller
 
                 $message->to( $data['to'], $data['toName'] )->bcc( $data['from'] )->subject( $data['subject'] );    // Will send blind copy to sender!
 
-            });
+            }); 
 
         } catch(\Exception $e) {
 
@@ -197,14 +197,14 @@ class CustomerUsersController extends Controller
         $customer_id = $request->input('customer_id');
 
         if (
-                $request->input('enable_min_order') ||
+                $request->input('enable_min_order') || 
                 (( $request->input('enable_min_order') == -1 ) && Configuration::isTrue('ABCC_ENABLE_MIN_ORDER'))
         )
             ;
         else
             $request->merge( ['min_order_value' => 0.0] );
 
-
+        
         $vrules = CustomerUser::$rules;
 
         if ( isset($vrules['email']) ) $vrules['email'] .= ','. $customeruser->id.',id';  // Unique
@@ -273,8 +273,8 @@ class CustomerUsersController extends Controller
     /**
      * Extra Stuff.
      *
-     *
-     */
+     * 
+     */  
 
 
     public function impersonate($id)
@@ -291,7 +291,7 @@ class CustomerUsersController extends Controller
 
     public function getCart($id)
     {
-
+        
         $customer_user = $this->customeruser->with('cart', 'cart.cartlines')->findOrFail($id);
 
         return view('customers._panel_cart_lines', ['user' => $customer_user, 'cart' => $customer_user->cart]);
@@ -304,7 +304,7 @@ class CustomerUsersController extends Controller
             $data = [];
 
         return response()->json( ['user' => $customer_user] );
-
+        
         // Request data
         $product_id      = $request->input('product_id');
         $combination_id  = $request->input('combination_id');
@@ -327,7 +327,7 @@ class CustomerUsersController extends Controller
 
         // Customer
         $customer = \App\Customer::findOrFail(intval($customer_id));
-
+        
         // Currency
         $currency = \App\Currency::findOrFail(intval($currency_id));
         $currency->conversion_rate = $request->input('conversion_rate', $currency->conversion_rate);
@@ -347,48 +347,48 @@ class CustomerUsersController extends Controller
 //        $tax_percent = $tax->percent;               // Accessor: $tax->getPercentAttribute()
 //        $price->applyTaxPercent( $tax_percent );
 
-        if ($customer_price)
+        if ($customer_price) 
         {
-            $customer_price->applyTaxPercentToPrice($tax_percent);
-
+            $customer_price->applyTaxPercentToPrice($tax_percent);        
+    
             $data = [
                 'product_id' => $product->id,
                 'combination_id' => $combination_id,
                 'reference' => $product->reference,
                 'name' => $product->name,
                 'cost_price' => $product->cost_price,
-                'unit_price' => [
-                            'tax_exc' => $price->getPrice(),
+                'unit_price' => [ 
+                            'tax_exc' => $price->getPrice(), 
                             'tax_inc' => $price->getPriceWithTax(),
-                            'display' => Configuration::get('PRICES_ENTERED_WITH_TAX') ?
+                            'display' => Configuration::get('PRICES_ENTERED_WITH_TAX') ? 
                                         $price->getPriceWithTax() : $price->getPrice(),
-                            'price_is_tax_inc' => $price->price_is_tax_inc,
+                            'price_is_tax_inc' => $price->price_is_tax_inc,  
 //                            'price_obj' => $price,
                             ],
-
-                'unit_customer_price' => [
-                            'tax_exc' => $customer_price->getPrice(),
+    
+                'unit_customer_price' => [ 
+                            'tax_exc' => $customer_price->getPrice(), 
                             'tax_inc' => $customer_price->getPriceWithTax(),
-                            'display' => Configuration::get('PRICES_ENTERED_WITH_TAX') ?
+                            'display' => Configuration::get('PRICES_ENTERED_WITH_TAX') ? 
                                         $customer_price->getPriceWithTax() : $customer_price->getPrice(),
-                            'price_is_tax_inc' => $customer_price->price_is_tax_inc,
+                            'price_is_tax_inc' => $customer_price->price_is_tax_inc,  
 //                            'price_obj' => $customer_price,
                             ],
-
+    
                 'tax_percent' => $tax_percent,
                 'tax_id' => $product->tax_id,
                 'tax_label' => $tax->name." (".$tax->as_percentable($tax->percent)."%)",
                 'customer_id' => $customer_id,
                 'currency' => $currency,
-
+    
                 'measure_unit_id' => $product->measure_unit_id,
                 'quantity_decimal_places' => $product->quantity_decimal_places,
-                'reorder_point'      => $product->reorder_point,
-                'quantity_onhand'    => $product->quantity_onhand,
-                'quantity_onorder'   => $product->quantity_onorder,
-                'quantity_allocated' => $product->quantity_allocated,
-                'blocked' => $product->blocked,
-                'active'  => $product->active,
+                'reorder_point'      => $product->reorder_point, 
+                'quantity_onhand'    => $product->quantity_onhand, 
+                'quantity_onorder'   => $product->quantity_onorder, 
+                'quantity_allocated' => $product->quantity_allocated, 
+                'blocked' => $product->blocked, 
+                'active'  => $product->active, 
             ];
         } else
             $data = [];

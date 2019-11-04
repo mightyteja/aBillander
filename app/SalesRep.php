@@ -76,11 +76,22 @@ class SalesRep extends Model {
         return $this->hasMany('App\CustomerOrder');
     }
 
+
+    public function commissionsettlements()
+    {
+        return $this->hasMany('App\CommissionSettlement');
+    }
+
     /**
      * Get the user record associated with the user.
      */
     public function user()
     {
-        return $this->hasOne('App\SalesRepUser', 'sales_rep_id');
+        return $this->hasOne('App\SalesRepUser', 'sales_rep_id');   // ->where('is_principal', 1);
+    }
+
+    public function users()
+    {
+        return $this->hasMany('App\SalesRepUser', 'sales_rep_id');
     }
 }

@@ -125,7 +125,7 @@ class AbccCatalogueController extends Controller
 
             $product->price_tax_inc = 0;
             $product->tax_percent = 0;
-            $tax = $product->getTaxRules(null, $customer);
+            $tax = $product->getTaxRules($customer->address, $customer);
 
             // TODO. Several tax lines are possible?
             // should check if this is a rule_type sales tax?

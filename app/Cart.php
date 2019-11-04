@@ -468,7 +468,12 @@ class Cart extends Model
 
         // if the customer has que sales_equalization enabled,
         // we need to set the product's sales_equalization to 1 to use it
-        $product->sales_equalization = 1;
+        if ($product->procurement_type != 'none') {
+            $product->sales_equalization = 1;
+        } else {
+            // Case “Product” is a service, and  Sales Equalization does not apply
+            $product->sales_equalization = 0;
+        }
 
         $tax = $product->getTaxRules($address, $customer);
 

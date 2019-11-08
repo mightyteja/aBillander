@@ -326,8 +326,13 @@ Route::group(['middleware' =>  ['restrictIp', 'auth', 'context']], function()
         Route::resource('emaillogs', 'EmailLogsController');
 
 
+        Route::get('customerorders/recurring/cron', 'CustomerRecurringOrderController@cron')->name('recurringorders.cron');
+        Route::get('customerorders/{order_id}/recurring/create', 'CustomerRecurringOrderController@create')->name('recurringorders.create');
+        Route::resource('customerorders/recurring', 'CustomerRecurringOrderController')->except(['show', 'create'])->names('recurringorders');
 
-//        Route::resource('customerorders', 'CustomerOrdersController');
+
+
+    //        Route::resource('customerorders', 'CustomerOrdersController');
         Route::post('customerorders/{id}/move', 'CustomerOrdersController@move')->name('customerorder.move');
         Route::post('customerorders/{id}/unlink', 'CustomerOrdersController@unlink')->name('customerorder.unlink');
 /*

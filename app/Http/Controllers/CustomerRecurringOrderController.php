@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\CustomerCenter;
+namespace App\Http\Controllers;
 
 use App\Context;
 use App\CustomerOrder;
@@ -14,7 +14,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Mail;
 
-class AbccCustomerRecurringOrderController extends Controller
+class CustomerRecurringOrderController extends Controller
 {
 
     /**
@@ -28,34 +28,29 @@ class AbccCustomerRecurringOrderController extends Controller
 
         $customer_recurring_orders->setPath('recurringorders');
 
-        return view('abcc.recurring_orders.index', compact('customer_recurring_orders'));
+        return view('customer_recurring_orders.index', compact('customer_recurring_orders'));
     }
 
     /**
      * Show the form for creating a new resource.
      *
+     * @param $customer_order_id
      * @return Response
      */
-    public function create()
+    public function create($customer_order_id)
     {
+        $suggested_frequency = 7;
+
         $recurring_order = new CustomerRecurringOrder();
-        $recurring_order->start_at = now();
-        $recurring_order->next_occurring_at = now();
-        $customer_orders = $this->getFormattedCustomerOrdersForDropdown();
+        $recurring_order->start_at = today();
+        $recurring_order->next_at = today()->addDays($suggested_frequency);
+        $recurring_order->end_at = today()->addDays($suggested_frequency);
+        $recurring_order->frequency = $suggested_frequency;
+        $recurring_order->customer_order_id = $customer_order_id;
 
-        return view('abcc.recurring_orders.create', compact('recurring_order', 'customer_orders'));
+        return view('customer_recurring_orders.create', compact('recurring_order'));
     }
 
-    /**
-     * @return mixed
-     */
-    private function getFormattedCustomerOrdersForDropdown()
-    {
-        // custom_order_name alias defined in CustomerOrder
-        return CustomerOrder::ofLoggedCustomer()
-                            ->get()
-                            ->pluck('custom_order_name', 'id');
-    }
 
     /**
      * Store a newly created resource in storage.
@@ -67,13 +62,13 @@ class AbccCustomerRecurringOrderController extends Controller
     {
         $data = $request->all();
 
-        $data['next_occurring_at'] = Carbon::parse($data['start_at'])
+        $data['next_at'] = Carbon::parse($data['start_at'])
                                            ->addDays($data['frequency'])
                                            ->toDateTimeLocalString();
 
         CustomerRecurringOrder::create($data);
 
-        return redirect()->route('abcc.recurringorders.index')->with('success', l('Created recurring order'));
+        return redirect()->route('recurringorders.index')->with('success', l('Created recurring order'));
     }
 
     /**
@@ -85,15 +80,14 @@ class AbccCustomerRecurringOrderController extends Controller
     public function edit($id)
     {
         $recurring_order = CustomerRecurringOrder::getRecurringOrder($id);
-        $customer_orders = $this->getFormattedCustomerOrdersForDropdown();
 
         if (!$recurring_order) {
-            return redirect()->route('abcc.recurring_orders.index')
+            return redirect()->route('customer_recurring_orders.index')
                              ->with('error', l('The record with id=:id does not exist',
                                                ['id' => $id], 'layouts'));
         }
 
-        return view('abcc.recurring_orders.edit', compact('recurring_order', 'customer_orders'));
+        return view('customer_recurring_orders.edit', compact('recurring_order'));
     }
 
     /**
@@ -108,13 +102,13 @@ class AbccCustomerRecurringOrderController extends Controller
         $recurring_order = CustomerRecurringOrder::getRecurringOrder($id);
         $data = $request->all();
 
-        $data['next_occurring_at'] = Carbon::parse($data['start_at'])
+        $data['next_at'] = Carbon::parse($data['start_at'])
                                            ->addDays($data['frequency'])
                                            ->toDateTimeLocalString();
 
         $recurring_order->update($data);
 
-        return redirect()->route('abcc.recurringorders.index')->with('success', l('Updated recurring order'));
+        return redirect()->route('recurringorders.index')->with('success', l('Updated recurring order'));
     }
 
     /**
@@ -128,7 +122,7 @@ class AbccCustomerRecurringOrderController extends Controller
         $recurring_order = CustomerRecurringOrder::getRecurringOrder($id);
         $recurring_order->delete();
 
-        return redirect()->route('abcc.recurringorders.index')->with('success', l('Deleted recurring order'));
+        return redirect()->route('recurringorders.index')->with('success', l('Deleted recurring order'));
     }
 
     public function cron()
@@ -138,13 +132,13 @@ class AbccCustomerRecurringOrderController extends Controller
         /** @var CustomerRecurringOrder $recurring_order */
         foreach ($pending_recurring_orders as $recurring_order) {
 
-            if ($recurring_order->next_occurring_at <= now()) {
+            if ($recurring_order->next_at <= today()) {
                 // Create order and notify
                 $this->createNewCustomerOrder($recurring_order);
                 $this->notifyNewCustomerOrder($recurring_order);
 
                 // update next occurrence
-                $recurring_order->next_occurring_at = now()->addDays($recurring_order->frequency);
+                $recurring_order->next_at = today()->addDays($recurring_order->frequency);
                 $recurring_order->save();
 
                 echo 'Created new order from recurring order: ' . $recurring_order->id;
@@ -162,8 +156,8 @@ class AbccCustomerRecurringOrderController extends Controller
         $new_order = $recurring_order->customerOrder->replicate();
 
         // minor changes
-        $new_order->created_via = 'cron'; // ??
-        $new_order->document_date = now();
+        $new_order->created_via = 'recurring_order';
+        $new_order->document_date = today();
 
         $seq = Sequence::find($new_order->sequence_id);
         $doc_id = $seq->getNextDocumentId();
@@ -201,7 +195,7 @@ class AbccCustomerRecurringOrderController extends Controller
             ];
 
 
-            $name = 'emails.' . Context::getContext()->language->iso_code . '.abcc.new_customer_order';
+            $name = 'emails.' . Context::getContext()->language->iso_code . '.new_customer_order';
             $send = Mail::send($name, $template_vars, function ($message) use ($data) {
                 $message->from($data['from'], $data['fromName']);
 
@@ -211,7 +205,7 @@ class AbccCustomerRecurringOrderController extends Controller
         catch (Exception $e) {
 
             // TODO. change this. notify somehow
-            return redirect()->route('abcc.recurringorders.index')
+            return redirect()->route('recurringorders.index')
                              ->with('error', l('There was an error. Your message could not be sent.', [], 'layouts') . '<br />' .
                                              $e->getMessage());
         }

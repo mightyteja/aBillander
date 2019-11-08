@@ -1,4 +1,4 @@
-@extends('abcc.layouts.master')
+@extends('layouts.master')
 
 @section('title') {{ l('Customer Recurring Order - Show') }} @parent @stop
 
@@ -8,12 +8,12 @@
             <div class="page-header">
                 <div class="pull-right">
 
-                    <a href="{{ URL::to('abcc/recurringorders') }}" class="btn btn-default">
+                    <a href="{{ URL::to('recurringorders') }}" class="btn btn-default">
                         <i class="fa fa-mail-reply"></i> {{l('Back to Recurring Orders')}}
                     </a>
                 </div>
                 <h2>
-                    <a href="{{ route('abcc.recurringorders.index') }}">{{l('Recurring Order Detail', [], 'abcc/layouts')}}</a> &nbsp;
+                    <a href="{{ route('recurringorders.index') }}">{{l('Recurring Order Detail', [], 'layouts')}}</a> &nbsp;
                     <span style="color: #cccccc;">/</span>
 
                     <span class="badge" style="background-color: #3a87ad; margin-right: 72px;"
@@ -29,16 +29,16 @@
                     <div class="panel-heading">
                         <h3 class="panel-title">
                             {{ l('Edit Recurring Order') }} :: ({{$recurring_order->id}}) -
-                            <a href="{{route('abcc.orders.show', $recurring_order->customerOrder->id)}}">Original Order {{$recurring_order->customerOrder->id}}</a>
+                            {{--<a href="{{route('customerorder.show', $recurring_order->customerOrder->id)}}">Original Order {{$recurring_order->customerOrder->id}}</a>--}}
                         </h3>
                     </div>
                     <div class="panel-body">
 
                         @include('errors.list')
 
-                        {!! Form::model($recurring_order, array('method' => 'PATCH', 'route' => array('abcc.recurringorders.update', $recurring_order->id))) !!}
+                        {!! Form::model($recurring_order, array('method' => 'PATCH', 'route' => array('recurringorders.update', $recurring_order->id))) !!}
 
-                        @include('abcc.recurring_orders._form')
+                        @include('customer_recurring_orders._form')
 
                         {!! Form::close() !!}
                     </div>

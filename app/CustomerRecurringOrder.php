@@ -12,7 +12,7 @@ class CustomerRecurringOrder extends Model
 
     public static $rules = [];
 
-    protected $fillable = ['customer_order_id', 'start_at', 'next_occurring_at', 'frequency', 'active'];
+    protected $fillable = ['name', 'customer_order_id', 'start_at', 'next_at', 'end_at', 'frequency', 'notes', 'active'];
 
 
     public static function getRecurringOrders()
@@ -35,7 +35,7 @@ class CustomerRecurringOrder extends Model
     public static function getRecurringOrder($id)
     {
         return self::with('customerOrder')
-                   ->ofLoggedCustomer()  // Of Logged in Customer (see scope on Billable
+                   ->ofLoggedCustomer() // Of Logged in Customer
                    ->find($id);
     }
 

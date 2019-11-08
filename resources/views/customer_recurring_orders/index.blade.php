@@ -1,17 +1,10 @@
-@extends('abcc.layouts.master')
+@extends('layouts.master')
 
 @section('title') {{ l('My Recurring Orders') }} @parent @stop
 
 @section('content')
 
     <div class="page-header">
-        <div class="pull-right">
-
-            <a class="btn btn-grey" href="{{ route('abcc.recurringorders.create') }}"
-               title="{{l('New recurring order', [], 'layouts')}}" style="margin-right: 72px">
-                <i class="fa fa-plus"></i> {{l('Create new recurring order', [], 'layouts')}}
-            </a>
-        </div>
         <h2>
             {{ l('My Recurring Orders') }}
         </h2>
@@ -26,9 +19,11 @@
                     <thead>
                     <tr>
                         <th class="text-left">{{ l('Order #') }}</th>
+                        <th class="text-left">{{ l('Name') }}</th>
                         <th class="text-left">{{ l('Start at Date') }}</th>
-                        <th class="text-left">{{ l('Next Occurring at Date') }}</th>
-                        <th class="text-left">{{ l('Frequency') }}</th>
+                        <th class="text-left">{{ l('Next at Date') }}</th>
+                        <th class="text-left">{{ l('End at Date') }}</th>
+                        <th class="text-left">{{ l('Frequency in days') }}</th>
                         <th class="text-left">{{ l('Active') }}</th>
                         <th class="text-center">{{ l('Notes') }}</th>
                         <th></th>
@@ -38,17 +33,20 @@
                     @foreach ($customer_recurring_orders as $recurring_order)
                         <tr>
                             <td>{{ $recurring_order->id }} / {{ $recurring_order->customer_order_id }}</td>
-                            <td>{{ abi_date_form_full($recurring_order->start_at) }}</td>
-                            <td>{{ abi_date_form_full($recurring_order->next_occurring_at) }}</td>
+                            <td>{{ $recurring_order->name }}</td>
+                            <td>{{ abi_date_form_short($recurring_order->start_at) }}</td>
+                            <td>{{ abi_date_form_short($recurring_order->next_at) }}</td>
+                            <td>{{ abi_date_form_short($recurring_order->end_at) }}</td>
                             <td>{{ $recurring_order->frequency }}</td>
                             <td>{{ $recurring_order->active }}</td>
+                            <td>{{ $recurring_order->notes }}</td>
 
                             <td class="text-right">
-                                <a class="btn btn-sm btn-warning" href="{{ route('abcc.recurringorders.edit', [$recurring_order->id]) }}"
+                                <a class="btn btn-sm btn-warning" href="{{ route('recurringorders.edit', [$recurring_order->id]) }}"
                                    title="{{l('View', [], 'layouts')}}"><i class="fa fa-pencil"></i></a>
 
                                 <a class="btn btn-sm btn-danger delete-item" data-html="false" data-toggle="modal"
-                                   href="{{route('abcc.recurringorders.destroy', [$recurring_order->id] ) }}"
+                                   href="{{route('recurringorders.destroy', [$recurring_order->id] ) }}"
                                    data-content="{{l('You are going to delete a record. Are you sure?', [], 'layouts')}}"
                                    onClick="return false;" title="{{l('Delete', [], 'layouts')}}"><i class="fa fa-trash-o"></i></a>
 
@@ -81,7 +79,7 @@
 {{-- *************************************** --}}
 
 
-@include('layouts/modal_delete')
+@include('layouts.modal_delete')
 
 @section('scripts') @parent
 

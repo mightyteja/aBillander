@@ -1,6 +1,6 @@
-@extends('abcc.layouts.master')
+@extends('layouts.master')
 
-@section('title') {{ l('Customer Recurring Order - Show') }} @parent @stop
+@section('title') {{ l('Customer Recurring Order - Create') }} @parent @stop
 
 @section('content')
     <div class="row">
@@ -8,14 +8,13 @@
             <div class="page-header">
                 <div class="pull-right">
 
-                    <a href="{{ URL::to('abcc/recurringorders') }}" class="btn btn-default">
+                    <a href="{{ URL::to('recurringorders') }}" class="btn btn-default">
                         <i class="fa fa-mail-reply"></i> {{l('Back to Recurring Orders')}}
                     </a>
                 </div>
                 <h2>
-                    <a href="{{ route('abcc.recurringorders.index') }}">{{l('Recurring Order Detail', [], 'abcc/layouts')}}</a> &nbsp;
+                    <a href="{{ route('recurringorders.index') }}">{{l('Recurring Order Detail', [], 'layouts')}}</a> &nbsp;
                     <span style="color: #cccccc;">/</span>
-
             </div>
         </div>
     </div>
@@ -33,9 +32,9 @@
 
                         @include('errors.list')
 
-                        {!! Form::model($recurring_order, array('method' => 'POST', 'route' => array('abcc.recurringorders.store'))) !!}
+                        {!! Form::model($recurring_order, array('method' => 'POST', 'route' => array('recurringorders.store'))) !!}
 
-                        @include('abcc.recurring_orders._form')
+                        @include('customer_recurring_orders._form')
 
                         {!! Form::close() !!}
                     </div>

@@ -1,4 +1,3 @@
-
 <div class="row">
     <div class="form-group col-lg-12 col-md-12 col-sm-12">
         {!! Form::label('name', l('Name')) !!}
@@ -10,16 +9,18 @@
 <div class="row">
 
     <div class="form-group col-lg-4 col-md-4 col-sm-4">
-        {!! Form::label('next_at', l('Start At')) !!}
-        {{ Form::input('dateTime-local', 'start_at', date('Y-m-d\TH:i', strtotime($recurring_order->start_at)), array('class' => 'form-control')) }}
+        {!! Form::label('start_at_form',l('Start At')) !!}
+        {!! Form::text('start_at_form', date('d/m/Y', strtotime($recurring_order->start_at)), array('id' => 'start_at_form', 'class' => 'form-control')) !!}
+    </div>
+
+    <div class="form-group col-lg-4 col-md-4 col-sm-4">
+        {!! Form::label('next_at_form', l('Next At')) !!}
+        {!! Form::text('next_at_form', date('d/m/Y', strtotime($recurring_order->next_at)),
+            array('id' => 'next_at_form', 'class' => 'form-control', 'disabled' => true)) !!}
     </div>
     <div class="form-group col-lg-4 col-md-4 col-sm-4">
-        {!! Form::label('next_at', l('Next At')) !!}
-        {{ Form::input('dateTime-local', 'next_at', date('Y-m-d\TH:i', strtotime($recurring_order->next_at)), array('class' => 'form-control', 'disabled' => true)) }}
-    </div>
-    <div class="form-group col-lg-4 col-md-4 col-sm-4">
-        {!! Form::label('end_at', l('End At')) !!}
-        {{ Form::input('dateTime-local', 'end_at', date('Y-m-d\TH:i', strtotime($recurring_order->end_at)), array('class' => 'form-control')) }}
+        {!! Form::label('end_at_form', l('End At')) !!}
+        {!! Form::text('end_at_form', date('d/m/Y', strtotime($recurring_order->end_at)), array('id' => 'end_at_form', 'class' => 'form-control')) !!}
     </div>
 </div>
 
@@ -59,6 +60,30 @@
 {!! link_to_route('recurringorders.index', l('Cancel', [], 'layouts'), null, array('class' => 'btn btn-warning')) !!}
 
 
+@section('styles')    @parent
+    {{-- Date Picker --}}
+    <link rel="stylesheet" href="//code.jquery.com/ui/1.11.4/themes/smoothness/jquery-ui.css">
+@endsection
+
 @section('scripts')    @parent
 
+<script src="//code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+{!! HTML::script('assets/plugins/jQuery-UI/datepicker/datepicker-'.\App\Context::getContext()->language->iso_code.'.js'); !!}
+
+<script type="text/javascript">
+    $(document).ready(function () {
+
+        $("#start_at_form").datepicker({
+            showOtherMonths: true,
+            selectOtherMonths: true,
+            dateFormat: "{{ \App\Context::getContext()->language->date_format_lite_view }}"
+        });
+
+        $("#end_at_form").datepicker({
+            showOtherMonths: true,
+            selectOtherMonths: true,
+            dateFormat: "{{ \App\Context::getContext()->language->date_format_lite_view }}"
+        });
+    });
+</script>
 @endsection

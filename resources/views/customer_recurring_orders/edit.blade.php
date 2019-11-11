@@ -8,7 +8,7 @@
             <div class="page-header">
                 <div class="pull-right">
 
-                    <a href="{{ URL::to('recurringorders') }}" class="btn btn-default">
+                    <a href="{{ route('recurringorders.index') }}" class="btn btn-default">
                         <i class="fa fa-mail-reply"></i> {{l('Back to Recurring Orders')}}
                     </a>
                 </div>
@@ -29,7 +29,7 @@
                     <div class="panel-heading">
                         <h3 class="panel-title">
                             {{ l('Edit Recurring Order') }} :: ({{$recurring_order->id}}) -
-                            {{--<a href="{{route('customerorder.show', $recurring_order->customerOrder->id)}}">Original Order {{$recurring_order->customerOrder->id}}</a>--}}
+                            <a href="{{route('customerorders.show', $recurring_order->customerOrder->id)}}">Original Order {{$recurring_order->customerOrder->id}}</a>
                         </h3>
                     </div>
                     <div class="panel-body">

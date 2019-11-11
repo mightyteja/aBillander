@@ -3,10 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Context;
-use App\CustomerOrder;
 use App\CustomerRecurringOrder;
-use App\Http\Controllers\Controller;
 use App\Sequence;
+use App\Traits\DateFormFormatterTrait;
 use Carbon\Carbon;
 use Exception;
 use Illuminate\Http\RedirectResponse;
@@ -16,6 +15,8 @@ use Illuminate\Support\Facades\Mail;
 
 class CustomerRecurringOrderController extends Controller
 {
+
+    use DateFormFormatterTrait;
 
     /**
      * Display a listing of the resource.
@@ -60,15 +61,29 @@ class CustomerRecurringOrderController extends Controller
      */
     public function store(Request $request)
     {
-        $data = $request->all();
-
-        $data['next_at'] = Carbon::parse($data['start_at'])
-                                           ->addDays($data['frequency'])
-                                           ->toDateTimeLocalString();
+        $data = $this->formatDates($request);
 
         CustomerRecurringOrder::create($data);
 
         return redirect()->route('recurringorders.index')->with('success', l('Created recurring order'));
+    }
+
+    /**
+     * @param Request $request
+     * @return array
+     */
+    private function formatDates(Request $request)
+    {
+        $this->mergeFormDates( ['start_at', 'end_at'], $request );
+
+        $data = $request->all();
+
+        if ($data['start_at']) {
+            $data['next_at'] = Carbon::parse($data['start_at'])
+                                     ->addDays($data['frequency'])
+                                     ->toDateString();
+        }
+        return $data;
     }
 
     /**
@@ -100,11 +115,8 @@ class CustomerRecurringOrderController extends Controller
     public function update(Request $request, $id)
     {
         $recurring_order = CustomerRecurringOrder::getRecurringOrder($id);
-        $data = $request->all();
 
-        $data['next_at'] = Carbon::parse($data['start_at'])
-                                           ->addDays($data['frequency'])
-                                           ->toDateTimeLocalString();
+        $data = $this->formatDates($request);
 
         $recurring_order->update($data);
 

@@ -15,5 +15,7 @@ class VerifyCsrfToken extends Middleware
         //
         'wooc/webhook',		// <= For testing
         'wooc/webhook/order/created',
+        
+        'WebClientPrintController',
     ];
 }

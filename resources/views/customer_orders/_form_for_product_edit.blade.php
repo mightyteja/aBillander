@@ -156,6 +156,30 @@
                  </div>
         </div>
 
+
+        <div class="row">
+                  <div class=" hidden form-group col-lg-6 col-md-6 col-sm-6 {{ $errors->has('line_pmu_label') ? 'has-error' : '' }}">
+                     {{ ld('Measure Unit Label') }}
+                              <a href="javascript:void(0);" data-toggle="popover" data-placement="top" data-container="body" 
+                                        data-content="{{ ld('This Label will appear on Document Lines.') }}">
+                                    <i class="fa fa-question-circle abi-help"></i>
+                              </a>
+                     {!! Form::text('line_pmu_label', null, array('class' => 'form-control', 'id' => 'line_pmu_label', 'xonclick' => 'this.select()')) !!}
+                     {!! $errors->first('line_pmu_label', '<span class="help-block">:message</span>') !!}
+                  </div>
+
+                  <div class=" hidden form-group col-lg-6 col-md-6 col-sm-6 {{ $errors->has('line_extra_quantity_label') ? 'has-error' : '' }}">
+                     {{ ld('Extra Quantity Label') }}
+                              <a href="javascript:void(0);" data-toggle="popover" data-placement="top" data-container="body" 
+                                        data-content="{{ ld('This Label will appear on Document Lines.') }}">
+                                    <i class="fa fa-question-circle abi-help"></i>
+                              </a>
+                     {!! Form::text('line_extra_quantity_label', null, array('class' => 'form-control', 'id' => 'line_extra_quantity_label', 'xonclick' => 'this.select()')) !!}
+                     {!! $errors->first('line_extra_quantity_label', '<span class="help-block">:message</span>') !!}
+                  </div>
+        </div>
+
+
         <div class="row">
                   <div class="form-group col-lg-12 col-md-12 col-sm-12 {{ $errors->has('line_notes') ? 'has-error' : '' }}">
                      {{ l('Notes', [], 'layouts') }}

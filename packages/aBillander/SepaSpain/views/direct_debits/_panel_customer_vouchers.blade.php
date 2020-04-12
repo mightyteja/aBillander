@@ -1,17 +1,13 @@
 
 
-{!! Form::open( ['route' => ['customervouchers.payvouchers'], 'method' => 'POST', 'id' => 'form-payvouchers'] ) !!}
-
 
 <div class="panel-body" id="div_payments">
    <div class="table-responsive">
 
 @if (optional($directdebit->vouchers)->count())
-
 <table id="payments" class="table table-hover">
 	<thead>
 		<tr>
-      <th class="text-center">{!! Form::checkbox('', null, false, ['id' => 'ckbCheckAll']) !!}</th>
 			<th class="text-left">{{l('ID', [], 'layouts')}}</th>
 			<th>{{l('Invoice')}}</th>
 			<th>{{l('Customer')}}</th>
@@ -23,16 +19,9 @@
 			<th> </th>
 		</tr>
 	</thead>
-	<tbody id="voucher_lines">
+	<tbody>
 	@foreach ($directdebit->vouchers as $payment)
 		<tr>
-
-      @if ( $payment->status == 'pending' )
-      <td class="text-center warning">{!! Form::checkbox('vouchers[]', $payment->id, false, ['class' => 'case checkbox']) !!}</td>
-      @else
-      <td> </td>
-      @endif
-
 			<td>{{ $payment->id }}</td>
 			<td>
           <a href="{{ URL::to('customerinvoices/' . optional($payment->customerInvoice)->id . '/edit') }}" title="{{l('Go to', [], 'layouts')}}" target="_blank">{{ $payment->customerInvoice->document_reference or '' }}</a></td>
@@ -63,7 +52,7 @@
             	@endif
             	{{\App\Payment::getStatusName($payment->status)}}</span></td>
 
-			<td class="text-right button-pad">
+			<td class="text-right">
               @if ( $directdebit->status == 'pending' )
 
                 <a class="btn btn-sm btn-success xcustomer-voucher-setduedate" href="{{ URL::to('customervouchers/' . $payment->id . '/setduedate?back_route=' . urlencode('sepasp/directdebits/' . $directdebit->id)) }}" title="{{l('Change Due Date')}}"><i class="fa fa-calendar"></i></a>
@@ -77,8 +66,6 @@
               	<!-- a class="btn btn-sm btn-warning" href="{{ URL::to('customervouchers/' . $payment->id . '/edit' ) }}" title="{{l('Edit', [], 'layouts')}}"><i class="fa fa-pencil"></i></a -->
 
               @if ( $payment->status == 'pending' )
-                <a class="btn btn-sm btn-warning unlink-customer-voucher" href="{{ URL::to('customervouchers/' . $payment->id . '/unlink') }}" title="{{l('Unlink')}}" data-oid="{{ $payment->id }}" data-boid="{{ $payment->bank_order_id }}" data-oreference="{{ $payment->reference }}" onClick="return false;"><i class="fa fa-unlink"></i></a>
-
                 <a class="btn btn-sm btn-danger" href="{{ URL::to('customervouchers/' . $payment->id  . '/edit?action=bounce&back_route=' . urlencode('sepasp/directdebits/' . $directdebit->id) ) }}" title="{{l('Bounce', 'customervouchers')}}"><i class="fa fa-mail-reply-all"></i>
                   </a>
 
@@ -87,22 +74,10 @@
               @endif
 
               @if ( $payment->status == 'paid' )
-                <a class="btn btn-xs btn-danger" href="{{ URL::to('customervouchers/' . $payment->id  . '/edit?action=bounce&back_route=' . urlencode('sepasp/directdebits/' . $directdebit->id) ) }}" title="{{l('Bounce', 'customervouchers')}}"><i class="fa fa-mail-reply-all"></i>
-                  
               @endif
 
               @if ( $payment->status == 'bounced' )
             	@endif
-
-    @endif
-
-    @if ( $directdebit->status == 'closed' )
-
-              @if ( $payment->status == 'paid' )
-                <a class="btn btn-xs btn-danger" href="{{ URL::to('customervouchers/' . $payment->id  . '/edit?action=bounce&back_route=' . urlencode('sepasp/directdebits/' . $directdebit->id) ) }}" title="{{l('Bounce', 'customervouchers')}}"><i class="fa fa-mail-reply-all"></i>
-                  </a>
-
-              @endif
 
     @endif
 
@@ -123,34 +98,14 @@
 </div><!-- div class="panel-body" -->
 
 <div class="panel-footer text-right">
-
-@if ( $directdebit->vouchers->where('status', 'pending')->count() )
-
-               <strong class="{{ $errors->has('payment_date') ? 'text-danger' : '' }}">{{ l('Payment Date', 'customervouchers') }}</strong>: &nbsp;
-
-
-               {!! Form::text('payment_date_form', abi_date_short( \Carbon\Carbon::now() ), array('class' => 'xform-control', 'id' => 'payment_date_form',  'style' => 'width:96px', 'autocomplete' => 'off')) !!}
-               {{-- !! $errors->first('payment_date', '<span class="help-block">:message</span>') !! --}}
-
-
   <!-- a class="btn btn-link" data-dismiss="modal" href="{{ URL::to('workcenters') }}">{{l('Cancel', [], 'layouts')}}</a -->
-  <button class="btn xbtn-sm btn-info" type="submit" onclick="this.disabled=true;this.form.submit();" title="{{ l('Make Payment of selected Vouchers', 'customervouchers') }}">
-     <i class="fa fa-money"></i>
-     &nbsp; {{ l('Make Payment', 'customervouchers') }}
-  </button>
+  <!-- button class="btn btn-info" type="submit" onclick="this.disabled=true;this.form.submit();">
+     <i class="fa fa-plus"></i>
+     &nbsp; {{ l('Add Production Order') }}
+  </button -->
 
-@endif
-
-
-
-{{--
   <a class=" hide btn xbtn btn-info create-production-order" title="{{l('Set as Paid')}}"><i class="fa fa-money"></i> &nbsp;{{l('Set as Paid')}}</a>
---}}
 </div>
-
-{!! Form::close() !!}
-
-
 
 {{--
 @include('sepa_es::direct_debits._modal_pay_customer_voucher')
@@ -167,25 +122,6 @@ $(document).ready(function() {
 
 });
 
-// check box selection -->
-// See: http://www.dotnetcurry.com/jquery/1272/select-deselect-multiple-checkbox-using-jquery
-
-$(function () {
-    var $tblChkBox = $("#voucher_lines input:checkbox");
-    $("#ckbCheckAll").on("click", function () {
-        $($tblChkBox).prop('checked', $(this).prop('checked'));
-    });
-});
-
-$("#voucher_lines").on("change", function () {
-    if (!$(this).prop("checked")) {
-        $("#ckbCheckAll").prop("checked", false);
-    }
-});
-
-// check box selection ENDS -->
-
-
 </script>
 
 {{-- Date Picker :: http://api.jqueryui.com/datepicker/ --}}
@@ -195,15 +131,6 @@ $("#voucher_lines").on("change", function () {
 {!! HTML::script('assets/plugins/jQuery-UI/datepicker/datepicker-'.\App\Context::getContext()->language->iso_code.'.js'); !!}
 
 <script>
-  $(function() {
-    $( "#payment_date_form" ).datepicker({
-      showOtherMonths: true,
-      selectOtherMonths: true,
-      dateFormat: "{{ \App\Context::getContext()->language->date_format_lite_view }}"
-    });
-  });
-
-{{--
   $(function() {
     $( "#date_from_form" ).datepicker({
       showOtherMonths: true,
@@ -219,8 +146,6 @@ $("#voucher_lines").on("change", function () {
       dateFormat: "{{ \App\Context::getContext()->language->date_format_lite_view }}"
     });
   });
-
---}}
 </script>
 
 @endsection

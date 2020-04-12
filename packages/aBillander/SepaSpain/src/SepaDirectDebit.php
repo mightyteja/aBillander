@@ -17,9 +17,6 @@ class SepaDirectDebit extends Model
 
     use ViewFormatterTrait;
 
-    protected $error_code    =  0;
-    protected $error_message = '';
-
     public static $schemes = [
             'CORE',
             'B2B',
@@ -36,7 +33,7 @@ class SepaDirectDebit extends Model
     protected $fillable = [ 'sequence_id', 'iban', 'swift', 'creditorid', 
                             'currency_iso_code', 'currency_conversion_rate', 
 
-                            'scheme', 'status', 'onhold', 'group_vouchers', 'discount_dd', 'notes',
+                            'scheme', 'status', 'notes',
 
                             'document_date', 'validation_date', 'payment_date', 'posted_at',
 
@@ -60,8 +57,7 @@ class SepaDirectDebit extends Model
 
     public function updateTotal()
     {
-         // $total = $this->vouchers()->where('status', '<>', 'bounced')->sum('amount');
-         $total = $this->vouchers()->sum('amount');
+         $total = $this->vouchers()->where('status', '<>', 'bounced')->sum('amount');
 
          return $this->update( ['total' => $total] );
     }
@@ -77,7 +73,7 @@ class SepaDirectDebit extends Model
     {
             $list = [];
             foreach (static::$schemes as $scheme) {
-                $list[$scheme] = l(get_called_class().'.'.$scheme, 'sepasp');
+                $list[$scheme] = l(get_called_class().'.'.$scheme);
             }
 
             return $list;
@@ -85,7 +81,7 @@ class SepaDirectDebit extends Model
 
     public static function getSchemeName( $scheme )
     {
-            return l(get_called_class().'.'.$scheme, 'sepasp');
+            return l(get_called_class().'.'.$scheme);
     }
 
 
@@ -93,7 +89,7 @@ class SepaDirectDebit extends Model
     {
             $list = [];
             foreach (static::$statuses as $status) {
-                $list[$status] = l(get_called_class().'.'.$status, 'sepasp');
+                $list[$status] = l(get_called_class().'.'.$status);
                 // alternative => $list[$status] = l(static::class.'.'.$status, [], 'appmultilang');
             }
 
@@ -102,12 +98,12 @@ class SepaDirectDebit extends Model
 
     public static function getStatusName( $status )
     {
-            return l(get_called_class().'.'.$status, 'sepasp');
+            return l(get_called_class().'.'.$status);
     }
 
     public function getStatusNameAttribute()
     {
-            return l(get_called_class().'.'.$this->status, 'sepasp');
+            return l(get_called_class().'.'.$this->status);
     }
 
     public function checkStatus()
@@ -224,9 +220,6 @@ class SepaDirectDebit extends Model
         // generate a SepaDirectDebit object (pain.008.001.02).
         $paymentInfoId = \App\Context::getContext()->company->identification . '_' . $this->document_reference;
 
-        if ( $this->discount_dd > 0 )
-            $paymentInfoId = 'FSDD' . $paymentInfoId;
-
         /**
          * normal direct debit : LOCAL_INSTRUMENT_CORE_DIRECT_DEBIT = 'CORE';
          * urgent direct debit : LOCAL_INSTRUMENT_CORE_DIRECT_DEBIT_D_1 = 'COR1';
@@ -256,36 +249,7 @@ class SepaDirectDebit extends Model
          */
         $sequenceType = SepaUtilities::SEQUENCE_TYPE_RECURRING;
 
-        // Start the whole thing
-        $collectables = $this->vouchers()->where('status', 'pending')->get();
-
-        // Maybe a waste of time? Lets see:
-        if ( $collectables->count() == 0 )
-        {
-            $code = 10;
-            $message = 'No se han encontrado recibos pendientes de pago';
-
-            $this->setError($code, $message);
-
-            return false;
-        }
-        
-        // Let's do some sorting
-        $collectables = $collectables->groupBy(function ($item, $key) {
-            // does not like Carbon Object as a key, only strinfs, please:
-            return $item->due_date->format('Y-m-d');
-        });
-
-
-        // Lets rock
-        $directDebitFile = new SephpaDirectDebit(
-                                         $this->sanitize_name(\App\Context::getContext()->company->name_fiscal),
-                                         $paymentInfoId,        // Download file is named afther this value
-                                         SephpaDirectDebit::SEPA_PAIN_008_001_02,
-                                         $checkAndSanitize
-                                     );
-
-        // $collectionData template
+        // at least one in every SEPA file. No limit.
         $collectionData = [
             // needed information about the payer
                 'pmtInfId'      => $paymentInfoId,          // ID of the payment collection
@@ -294,7 +258,7 @@ class SepaDirectDebit extends Model
                 'cdtr'          => $this->sanitize_name(\App\Context::getContext()->company->name_fiscal),      // (max 70 characters)
                 'iban'          => $this->sanitize_iban( $this->iban ),            // IBAN of the Creditor
                 'bic'           => $this->swift,           // BIC of the Creditor
-                'ci'            => $this->calculateCreditorID( \App\Context::getContext()->company, $this->bankaccount ),    // Creditor-Identifier
+                'ci'            => $this->calculateCreditorID( \App\Context::getContext()->company, '100' ),    // Creditor-Identifier
             // optional
                 'ccy'           => $this->currency_iso_code ?: 'EUR',                   // Currency. Default is 'EUR'
 //                'btchBookg'     => 'true',                  // BatchBooking, only 'true' or 'false'
@@ -303,113 +267,7 @@ class SepaDirectDebit extends Model
 //                'reqdColltnDt'  => '2013-11-25'             // Date: YYYY-MM-DD. Due date for ALL vouchers inside
         ];
 
-        // Each group will be a Collection (keyed with "due_date")
-        foreach ($collectables as $key => $collection) 
-        {
-            // Need to group vouchers?
-            if ( $this->group_vouchers > 0 )
-            {
-                // Let's do some sorting (by customer, this time)
-                $sorted_collection = $collection->groupBy(function ($item, $key) {
-                    return $item->paymentorable_id;
-                });
-
-                foreach ($sorted_collection as $kkey => $group) {
-                    # code...
-                    if ( $group->count() <= 1 )
-                        continue;
-
-                    // Group vouchers by Customer into one
-                    // https://stackoverflow.com/questions/54522098/group-collection-by-multiple-column-laravel
-                    $grouped = $group->reduce(function ($carry, $item) {
-
-                            if(empty($carry[$item->paymentorable_id])){ //Not on the final array
-                               //Create it
-                               $carry[$item->paymentorable_id] = $item;
-                            } else { //Exists, then update >paymentorable_id adding amount
-                               $carry[$item->paymentorable_id]->amount += $item->amount; 
-                            }
-
-                            return $carry;
-                    }, []);
-
-                    $sorted_collection->put($kkey, collect($grouped));
-                }
-
-                $collection = $sorted_collection->flatten(1);
-            }
-
-            // at least one in every SEPA file. No limit.
-            $collectionData['pmtInfId']     = $paymentInfoId.'-'.$key;
-            $collectionData['reqdColltnDt'] = $key;
-
-            $directDebitCollection = $directDebitFile->addCollection( $collectionData );
-
-            // Add Vouchers now
-            foreach ($collection as $voucher) {
-                # code...
-
-                // Maybe a waste of time? Lets see:
-                if ( !optional($voucher->customer)->bankaccount )
-                {
-                    $code = 20;
-                    $message = 'El Cliente ['.$voucher->customer->id.'] '.$voucher->customer->name_fiscal.' no tiene cuenta bancaria asociada';
-
-                    $this->setError($code, $message);
-
-                    return false;
-                }
-
-
-                if ( $voucher->amount <= 0.0 )
-                {
-                    $code = 20;
-                    $message = 'El subtotal para el Cliente ['.$voucher->customer->id.'] '.$voucher->customer->name_fiscal.' es negativo';
-
-                    $this->setError($code, $message);
-
-                    return false;
-                }
-
-
-
-                $payment = [
-                // needed information about the 
-                    'pmtId'         => $voucher->reference,     // ID of the payment (EndToEndId)
-                    'instdAmt'      => $voucher->amount,                    // amount
-    //                'mndtId'        => 'Mandate-Id',            // Mandate ID
-    //                'dtOfSgntr'     => '2010-04-12',            // Date of signature
-                    'mndtId'        => $voucher->reference,            // Mandate ID
-                    'dtOfSgntr'     => $voucher->created_at->toDateString(),            // Date of signature
-    //                'bic'           => $voucher->customer->bankaccount->swift,           // BIC of the Debtor
-                    'dbtr'          => $this->sanitize_name( $voucher->customer->name_fiscal ),        // (max 70 characters)
-                    'iban'          => $this->sanitize_iban( $voucher->customer->bankaccount->iban ),     // IBAN of the Debtor
-                // optional
-    //                'amdmntInd'     => 'false',                 // Did the mandate change
-                    //'elctrncSgntr'  => 'tests',                  // do not use this if there is a paper-based mandate
-    //                'ultmtDbtr'     => 'Ultimate Debtor Name',  // just an information, this do not affect the payment (max 70 characters)
-                    //'purp'        => ,                        // Do not use this if you not know how. For further information read the SEPA documentation
-    //                'rmtInf'        => 'Remittance Information',// unstructured information about the remittance (max 140 characters)
-                    'rmtInf'        => $voucher->reference,
-                    // only use this if 'amdmntInd' is 'true'. at least one must be used
-    //                'orgnlMndtId'           => 'Original-Mandat-ID',
-    //                'orgnlCdtrSchmeId_nm'   => 'Creditor-Identifier Name',
-    //                'orgnlCdtrSchmeId_id'   => 'DE98AAA09999999999',
-    //                'orgnlDbtrAcct_iban'    => 'DE87200500001234567890',// Original Debtor Account
-    //                'orgnlDbtrAgt'          => 'SMNDA'          // only 'SMNDA' allowed if used
-                ];
-
-                if (!empty($voucher->fmandato)) {
-                    // $payment['dtOfSgntr'] = date('Y-m-d', strtotime($voucher->fmandato));
-                }
-
-                // So far, so good
-                $directDebitCollection->addPayment( $payment );
-            }
-        }
-
- 
- /* Old (not so good) stuff       
+        
         $directDebitFile = new SephpaDirectDebit(
                                          $this->sanitize_name(\App\Context::getContext()->company->name_fiscal),
                                          $paymentInfoId,        // Download file is named afther this value
@@ -463,14 +321,14 @@ class SepaDirectDebit extends Model
             ];
 
             if (!empty($voucher->fmandato)) {
-                // $payment['dtOfSgntr'] = date('Y-m-d', strtotime($voucher->fmandato));
+                $payment['dtOfSgntr'] = date('Y-m-d', strtotime($voucher->fmandato));
             }
 
             $directDebitFile->addPayment( $payment );
 
             // abi_r($voucher);
         }
-*/
+
         // $directDebitFile->store(__DIR__);
 
         // $directDebitFile->download();
@@ -492,21 +350,12 @@ class SepaDirectDebit extends Model
         return substr(str_replace($from, $to, $name), 0, 70);
     }
 
-    public function calculateCreditorID( \App\Company $company = null, $bankaccount = null )
+    public function calculateCreditorID( \App\Company $company = null, $suffix = '000' )
     {
         // https://inza.wordpress.com/2013/10/25/como-preparar-los-mandatos-sepa-identificador-del-acreedor/
 
         if ($company == null)
             $company = \App\Context::getContext()->company;
-
-        if ($bankaccount == null)
-            $bankaccount = \App\Context::getContext()->company->bankaccount;
-
-        if ( $bankaccount->creditorid )
-            return $bankaccount->creditorid;
-
-
-        $suffix = $bankaccount->suffix ?: '000';
 
         $creditorid = '';
 
@@ -574,22 +423,5 @@ class SepaDirectDebit extends Model
         }
 
         return $iban;
-    }
-
-
-/* *********************************************************************************************** */
-
-    private function setError($code, $message)
-    {
-        $this->error_code    = $code;
-        $this->error_message = $message;
-    }
-
-
-    public function getErrorMessage()
-    {
-        $message = $this->error_message ?? 'Unknown';
-
-        return  $message;
     }
 }

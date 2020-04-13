@@ -15,7 +15,7 @@ class MeasureUnitsTableSeeder extends Seeder {
             'sign' => 'ud.', 
             'name' => 'Unidad(es)', 
             'decimalPlaces' => 0, 
-            'conversion_rate' => 1.0,
+            'type_conversion_rate' => 1.0,
             'active' => 1,
         ] );
 
